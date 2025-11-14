@@ -1,50 +1,138 @@
 .navbar {
-  background: #f4f4f4;
+  background-color: #31694E; /* Dark Green */
   padding: 15px 30px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 4px solid #BBC863; /* Olive accent border */
 }
 
 .navBrand {
   font-size: 1.5rem;
   font-weight: 700;
   text-decoration: none;
-  color: #333;
+  color: #F0E491; /* Cream text for logo */
+  letter-spacing: 1px;
+}
+
+.navLinks {
+  display: flex;
+  align-items: center;
+  gap: 15px;
 }
 
 .navLink {
-  font-size: 1.1rem;
+  font-size: 1rem;
   text-decoration: none;
-  background: #eee;
+  background: rgba(255, 255, 255, 0.1); /* Transparent white */
   padding: 8px 12px;
   border-radius: 6px;
-  color: #333;
+  color: white;
   font-weight: 500;
+  transition: background 0.2s;
+
+  &:hover {
+    background: #658C58; /* Medium Green on hover */
+  }
 
   .cartCount {
     margin-left: 8px;
-    background: blue;
-    color: white;
+    background: #F0E491; /* Cream background */
+    color: #31694E; /* Dark text */
     border-radius: 50%;
     padding: 2px 7px;
     font-size: 0.9rem;
+    font-weight: bold;
   }
+}
 
-  .navButton { // <-- 2. Add styles for the button
-  font-size: 1.1rem;
+.navButton {
+  font-size: 1rem;
   text-decoration: none;
-  background: #ddd;
+  background: #BBC863; /* Olive */
   padding: 8px 12px;
   border-radius: 6px;
-  color: #333;
-  font-weight: 500;
+  color: #31694E;
+  font-weight: 600;
   border: none;
   cursor: pointer;
 
   &:hover {
-    background: #ccc;
+    background: #F0E491; /* Cream */
   }
 }
+
+/* --- STYLES FOR PROFILE DROPDOWN --- */
+
+/* 1. Wrapper for positioning */
+.profileContainer {
+  position: relative;
+  display: inline-block;
+}
+
+/* 2. The icon (clickable button) */
+.profileIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #F0E491; /* Cream */
+  color: #31694E; /* Dark Green */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  user-select: none; /* Prevents text selection when clicking */
+
+  &:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  }
+}
+
+/* 3. The dropdown menu itself */
+.dropdownMenu {
+  position: absolute;
+  top: 55px; /* Position below the icon */
+  right: 0;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  border: 1px solid #eee;
+  min-width: 200px;
+  z-index: 100;
+  padding: 8px 0;
+  animation: fadeIn 0.15s ease-out;
+}
+
+/* 4. The links/buttons inside the dropdown */
+.dropdownItem {
+  display: block;
+  width: 100%;
+  padding: 10px 20px;
+  background: none;
+  border: none;
+  
+  /* Text styles */
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #333;
+  text-align: left;
+  text-decoration: none;
+  
+  cursor: pointer;
+
+  &:hover {
+    background-color: #f9f9f9;
+    color: #31694E; /* Brand Green on hover */
+  }
+}
+
+/* Animation for the dropdown */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }

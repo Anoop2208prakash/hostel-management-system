@@ -1,30 +1,28 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import apiClient from '../../services/apiClient';
-import { AxiosError } from 'axios';
 import styles from './Inventory.module.scss';
 import { DataGrid, type ColumnDef } from '../../components/common/DataGrid';
+import { useToast } from '../../contexts/ToastContext'; // 1. Import Toast
+import DeleteModal from '../../components/common/DeleteModal'; // 2. Import Modal
 
-// Define the shape of our Product data
-interface Product {
-  id: string;
-  sku: string;
-  name: string;
-  price: number;
-  category: {
-    name: string;
-  };
-  totalStock: number; // <-- 1. Added stock field from API
-}
-
-// Define the data type we'll actually pass to the grid
+// ... (Interfaces remain the same) ...
 interface ProductRow {
   id: string;
   sku: string;
   name: string;
   category: string;
   price: string;
-  stock: number; // <-- 2. Added stock field for the grid
+  stock: number;
+}
+
+interface Product {
+  id: string;
+  sku: string;
+  name: string;
+  price: number;
+  category: { name: string };
+  totalStock: number;
 }
 
 const AdminInventory = () => {
@@ -32,36 +30,48 @@ const AdminInventory = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  
+  const { showToast } = useToast(); // 3. Init Toast
 
-  // --- Handle Delete Function ---
-  const handleDelete = async (productId: string) => {
-    if (!window.confirm('Are you sure you want to delete this product?')) {
-      return;
-    }
+  // 4. Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<string | null>(null);
+
+  // 5. Handle "Delete" Click (Opens Modal)
+  const onDeleteClick = (productId: string) => {
+    setProductToDelete(productId);
+    setIsModalOpen(true);
+  };
+
+  // 6. Confirm Delete (Actual API Call)
+  const handleConfirmDelete = async () => {
+    if (!productToDelete) return;
+
     try {
-      await apiClient.delete(`/products/${productId}`);
-      // Refresh list by filtering out the deleted product
-      setProducts((prevProducts) =>
-        prevProducts.filter((p) => p.id !== productId)
-      );
-      setError(''); // Clear any previous errors
+      await apiClient.delete(`/products/${productToDelete}`);
+      
+      // Update UI
+      setProducts((prev) => prev.filter((p) => p.id !== productToDelete));
+      
+      // Show Success Toast
+      showToast('Product deleted successfully!', 'success');
+      
     } catch (err) {
       console.error(err);
-      let message = 'Failed to delete product';
-      if (err instanceof AxiosError && err.response?.data?.message) {
-        message = err.response.data.message;
-      }
-      setError(message); // Show error to user
+      showToast('Failed to delete product', 'error');
+    } finally {
+      // Close Modal
+      setIsModalOpen(false);
+      setProductToDelete(null);
     }
   };
 
-  // --- Updated Column Definitions ---
   const columns: ColumnDef<ProductRow>[] = [
     { header: 'SKU', accessorKey: 'sku' },
     { header: 'Name', accessorKey: 'name' },
     { header: 'Category', accessorKey: 'category' },
     { header: 'Price', accessorKey: 'price' },
-    { header: 'Stock', accessorKey: 'stock' }, // <-- 3. Added Stock Column
+    { header: 'Stock', accessorKey: 'stock' },
     {
       header: 'Actions',
       cell: (row) => (
@@ -72,8 +82,9 @@ const AdminInventory = () => {
           >
             Edit
           </button>
+          {/* Pass ID to onDeleteClick instead of direct delete */}
           <button
-            onClick={() => handleDelete(row.id)}
+            onClick={() => onDeleteClick(row.id)} 
             className={styles.deleteButton}
           >
             Delete
@@ -83,7 +94,6 @@ const AdminInventory = () => {
     },
   ];
 
-  // --- Add" button for the empty state ---
   const addProductButton = (
     <Link to="/admin/inventory/new" className={styles.addButtonEmpty}>
       + Add Your First Product
@@ -95,41 +105,32 @@ const AdminInventory = () => {
       try {
         setLoading(true);
         const { data } = await apiClient.get<Product[]>('/products');
-        
-        // Transform data for the grid
         const formattedData = data.map(p => ({
           id: p.id,
           sku: p.sku,
           name: p.name,
           category: p.category.name,
           price: `₹${p.price.toFixed(2)}`,
-          stock: p.totalStock, // <-- 4. Map API data to grid row
+          stock: p.totalStock,
         }));
-        
         setProducts(formattedData);
         setError('');
       } catch (err) {
         console.error(err);
-        let message = 'Failed to fetch products';
-        if (err instanceof AxiosError && err.response?.data?.message) {
-          message = err.response.data.message;
-        }
-        setError(message);
+        setError('Failed to fetch products');
       } finally {
         setLoading(false);
       }
     };
-
     fetchProducts();
   }, []);
 
   if (loading) return <div>Loading inventory...</div>;
-  
+
   return (
     <div>
       <div className={styles.pageHeader}>
         <h2>Manage Inventory</h2>
-        {/* Show Add button only if there is data */}
         {products.length > 0 && (
           <Link to="/admin/inventory/new" className={styles.addButton}>
             + Add Product
@@ -137,16 +138,23 @@ const AdminInventory = () => {
         )}
       </div>
 
-      {/* Show error message if there is one */}
       {error && <div style={{ color: 'red', marginBottom: '15px' }}>Error: {error}</div>}
 
-      {/* Render the DataGrid */}
       <DataGrid
         columns={columns}
         data={products}
         emptyTitle="No Products Found"
         emptyMessage="Get started by adding your first product to the inventory."
         emptyAction={addProductButton}
+      />
+
+      {/* 7. Render the Modal */}
+      <DeleteModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Product"
+        message="Are you sure you want to remove this product? This will remove it from the store immediately."
       />
     </div>
   );

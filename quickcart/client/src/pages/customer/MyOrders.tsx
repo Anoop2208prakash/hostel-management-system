@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import apiClient from '../../services/apiClient';
 import { AxiosError } from 'axios';
+import { DataGrid, type ColumnDef } from '../../components/common/DataGrid'; // Ensure correct import
 import { useAuth } from '../../contexts/AuthContext';
-import { DataGrid, type ColumnDef } from '../../components/common/DataGrid';
+import styles from './MyOrders.module.scss'; // <-- Import SCSS
 
-// (These types should be centralized)
 interface Order {
   id: string;
   totalPrice: number;
@@ -23,9 +23,8 @@ const MyOrders = () => {
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const { user } = useAuth(); // To check if logged in
+  const { user } = useAuth();
 
-  // Define our columns
   const columns: ColumnDef<OrderRow>[] = [
     { header: 'Order ID', accessorKey: 'id' },
     { header: 'Date', accessorKey: 'date' },
@@ -36,7 +35,6 @@ const MyOrders = () => {
   useEffect(() => {
     if (!user) {
       setLoading(false);
-      setError('Please log in to see your orders.');
       return;
     }
 
@@ -44,14 +42,14 @@ const MyOrders = () => {
       try {
         setLoading(true);
         const { data } = await apiClient.get<Order[]>('/orders/myorders');
-
+        
         const formattedData = data.map(order => ({
           id: order.id,
           date: new Date(order.createdAt).toLocaleDateString(),
           total: `₹${order.totalPrice.toFixed(2)}`,
           status: order.status,
         }));
-
+        
         setOrders(formattedData);
         setError('');
       } catch (err) {
@@ -73,14 +71,16 @@ const MyOrders = () => {
   if (error) return <div style={{ color: 'red' }}>Error: {error}</div>;
 
   return (
-    <div>
+    <div className={styles.container}>
       <h2>My Orders</h2>
-      <DataGrid
-        columns={columns}
-        data={orders}
-        emptyTitle="No Orders Found"
-        emptyMessage="You haven't placed any orders yet."
-      />
+      <div className={styles.gridWrapper}>
+        <DataGrid
+          columns={columns}
+          data={orders}
+          emptyTitle="No Orders Found"
+          emptyMessage="You haven't placed any orders yet."
+        />
+      </div>
     </div>
   );
 };

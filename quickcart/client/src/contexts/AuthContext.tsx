@@ -1,33 +1,33 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import apiClient from '../services/apiClient';
 
-// Define the shape of the User object
 interface User {
   _id: string;
   name: string;
   email: string;
   role: string;
+  phone?: string; // Add phone to user type
 }
 
-// Define the shape of the Context
+// 1. Define the shape of the data for the new function
+type AuthData = User & { token: string };
+
 interface AuthContextType {
   user: User | null;
   token: string | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<User>; // <-- 1. THIS LINE IS CHANGED
+  login: (email: string, password: string) => Promise<User>;
   logout: () => void;
+  updateUserContext: (data: AuthData) => void; // <-- 2. Add new function to type
 }
 
-// Create the context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Create the Provider component
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'));
   const [isLoading, setIsLoading] = useState(true);
 
-  // Effect to load user data on app start
   useEffect(() => {
     const loadUserFromToken = async () => {
       if (token) {
@@ -39,6 +39,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
         } catch (err) {
           console.error("Failed to load user", err);
+          // (rest of logout logic)
           setToken(null);
           localStorage.removeItem('token');
           localStorage.removeItem('user');
@@ -49,46 +50,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     loadUserFromToken();
   }, [token]);
 
-  // Login function
-  const login = async (email: string, password: string) => {
-    const { data } = await apiClient.post('/auth/login', { email, password });
-
-    // Save data
+  // --- 3. Create the new function ---
+  // This safely updates local storage and state
+  const updateUserContext = (data: AuthData) => {
     setToken(data.token);
     setUser(data);
-
-    // Set token for future requests
     apiClient.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
-
-    // Persist to localStorage
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(data));
-
-    return data; // <-- 2. THIS LINE IS ADDED
   };
 
-  // Logout function
+  const login = async (email: string, password: string) => {
+    const { data } = await apiClient.post('/auth/login', { email, password });
+    updateUserContext(data); // Login now uses the new function
+    return data;
+  };
+
   const logout = () => {
-    // Clear state
     setUser(null);
     setToken(null);
-
-    // Clear from localStorage
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-
-    // Remove from apiClient headers
     delete apiClient.defaults.headers.common['Authorization'];
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, token, isLoading, login, logout, updateUserContext }}>
       {!isLoading && children}
     </AuthContext.Provider>
   );
 };
 
-// Create the custom hook
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {

@@ -1,0 +1,105 @@
+/* client/src/pages/auth/Auth.module.scss */
+
+.authContainer {
+  max-width: 420px;
+  margin: 80px auto;
+  padding: 40px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  /* Add a nice accent border on top using your Dark Green */
+  border-top: 5px solid #31694E; 
+}
+
+.title {
+  text-align: center;
+  color: #31694E; /* Dark Green */
+  margin-bottom: 30px;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.formGroup {
+  margin-bottom: 20px;
+
+  label {
+    display: block;
+    margin-bottom: 8px;
+    color: #333;
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    background-color: #fdfdfd;
+
+    &:focus {
+      outline: none;
+      border-color: #658C58; /* Medium Green focus */
+      box-shadow: 0 0 0 3px rgba(101, 140, 88, 0.1); /* Subtle green glow */
+    }
+  }
+}
+
+.submitButton {
+  width: 100%;
+  padding: 12px;
+  background-color: #31694E; /* Dark Green */
+  color: white; // White text contrasts best
+  border: none;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s;
+  margin-top: 10px;
+
+  &:hover {
+    background-color: #658C58; /* Medium Green hover */
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  &:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+}
+
+.error {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  text-align: center;
+  font-size: 0.9rem;
+  border: 1px solid #fca5a5;
+}
+
+.footerText {
+  text-align: center;
+  margin-top: 25px;
+  color: #666;
+  font-size: 0.95rem;
+
+  a {
+    color: #31694E; /* Dark Green link */
+    font-weight: 700;
+    text-decoration: none;
+    margin-left: 5px;
+
+    &:hover {
+      text-decoration: underline;
+      color: #658C58; /* Medium Green hover */
+    }
+  }
+}

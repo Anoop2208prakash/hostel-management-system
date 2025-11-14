@@ -6,6 +6,7 @@ import AdminLayout from '../layouts/AdminLayout';
 
 // --- Import Protectors ---
 import ProtectedRoute from './ProtectedRoute';
+import AdminRoute from './AdminRoute'; // <-- 1. Import AdminRoute
 
 // --- Import Page components ---
 import Home from '../pages/customer/Home';
@@ -20,7 +21,9 @@ import ProductCreate from '../pages/admin/ProductCreate';
 import ProductEdit from '../pages/admin/ProductEdit';
 import AdminOrders from '../pages/admin/Orders';
 import AdminOrderDetails from '../pages/admin/OrderDetails';
-import DriverDashboard from '../pages/driver/DriverDashboard'; // <-- 1. IMPORT THIS
+import DriverDashboard from '../pages/driver/DriverDashboard';
+import ProfilePage from '../pages/customer/ProfilePage';
+import UpdatePassword from '../pages/customer/UpdatePassword';
 
 const router = createBrowserRouter([
   {
@@ -31,6 +34,8 @@ const router = createBrowserRouter([
       { path: 'cart', element: <CartPage /> },
       { path: 'order-success/:id', element: <OrderSuccess /> },
       { path: 'my-orders', element: <MyOrders /> },
+      { path: 'profile', element: <ProfilePage /> },
+      { path: 'profile/update-password', element: <UpdatePassword /> },
     ],
   },
   {
@@ -41,27 +46,33 @@ const router = createBrowserRouter([
     ],
   },
   {
-    element: <ProtectedRoute />, // Wrap all children in the protector
+    element: <ProtectedRoute />, // <-- Guards all children (Driver + Admin)
     children: [
-      // vvv 2. ADD THIS ROUTE (Driver Portal) vvv
       { 
         path: '/driver', 
         element: <DriverDashboard /> 
       },
-      // ^^^ END NEW ROUTE ^^^
-
+      
+      // vvv 2. THIS IS THE CHANGE vvv
+      // We wrap the /admin path in its own dedicated AdminRoute
       {
-        path: '/admin',
-        element: <AdminLayout />, // This layout is now protected
+        element: <AdminRoute />,
         children: [
-          { index: true, element: <Dashboard /> },
-          { path: 'orders', element: <AdminOrders /> },
-          { path: 'orders/:id', element: <AdminOrderDetails /> },
-          { path: 'inventory', element: <AdminInventory /> },
-          { path: 'inventory/new', element: <ProductCreate /> },
-          { path: 'inventory/edit/:id', element: <ProductEdit /> },
-        ],
+          {
+            path: '/admin',
+            element: <AdminLayout />,
+            children: [
+              { index: true, element: <Dashboard /> },
+              { path: 'orders', element: <AdminOrders /> },
+              { path: 'orders/:id', element: <AdminOrderDetails /> },
+              { path: 'inventory', element: <AdminInventory /> },
+              { path: 'inventory/new', element: <ProductCreate /> },
+              { path: 'inventory/edit/:id', element: <ProductEdit /> },
+            ],
+          },
+        ]
       },
+      // ^^^ END CHANGE ^^^
     ],
   },
 ]);

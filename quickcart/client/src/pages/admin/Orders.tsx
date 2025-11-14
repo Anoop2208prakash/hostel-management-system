@@ -2,16 +2,8 @@ import { useState, useEffect } from 'react';
 import apiClient from '../../services/apiClient';
 import { AxiosError } from 'axios';
 import { DataGrid, type ColumnDef } from '../../components/common/DataGrid';
-
-// --- THIS IS THE FIX ---
-// We define a minimal type for the items array.
-interface OrderItem {
-  product: {
-    name: string;
-  };
-  // We could add quantity, price, etc. here if needed
-}
-// --- END FIX ---
+import { useNavigate } from 'react-router-dom'; // <-- 1. Import useNavigate
+import styles from './Orders.module.scss'; // <-- 2. Import SCSS
 
 // Define the shape of our Order data from the API
 interface Order {
@@ -23,7 +15,6 @@ interface Order {
   totalPrice: number;
   status: string;
   createdAt: string;
-  items: OrderItem[]; // <-- Use the OrderItem type instead of any[]
 }
 
 // Define the data type we'll pass to the grid
@@ -39,14 +30,37 @@ const AdminOrders = () => {
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  
+  const navigate = useNavigate(); // <-- 3. Initialize Hook
 
-  // Define our columns
+  // --- 4. Define Columns with "Actions" ---
   const columns: ColumnDef<OrderRow>[] = [
     { header: 'Order ID', accessorKey: 'id' },
     { header: 'Customer', accessorKey: 'customer' },
     { header: 'Total', accessorKey: 'total' },
-    { header: 'Status', accessorKey: 'status' },
+    { 
+      header: 'Status', 
+      // Custom cell to render colored badges
+      cell: (row) => (
+        <span className={`${styles.statusBadge} ${styles[row.status.toLowerCase()]}`}>
+          {row.status.replace(/_/g, ' ')}
+        </span>
+      )
+    },
     { header: 'Date', accessorKey: 'date' },
+    {
+      header: 'Actions',
+      // vvv THIS IS THE MISSING BUTTON vvv
+      cell: (row) => (
+        <button 
+          className={styles.viewButton}
+          onClick={() => navigate(`/admin/orders/${row.id}`)}
+        >
+          View Details
+        </button>
+      ),
+      // ^^^ --------------------------- ^^^
+    },
   ];
 
   useEffect(() => {
@@ -55,7 +69,6 @@ const AdminOrders = () => {
         setLoading(true);
         const { data } = await apiClient.get<Order[]>('/orders');
         
-        // Transform data for the grid
         const formattedData = data.map(order => ({
           id: order.id,
           customer: order.user.name || order.user.email,
@@ -86,7 +99,7 @@ const AdminOrders = () => {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className={styles.pageHeader}>
         <h2>Manage Orders</h2>
       </div>
 

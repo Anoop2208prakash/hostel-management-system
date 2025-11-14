@@ -1,7 +1,9 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import apiClient from '../../services/apiClient';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { AxiosError } from 'axios';
+import { useToast } from '../../contexts/ToastContext'; // <-- 1. Import Toast
+import styles from './ProductCreate.module.scss';
 
 // Type for the categories
 interface Category {
@@ -17,13 +19,13 @@ const ProductCreate = () => {
   const [categoryId, setCategoryId] = useState('');
   const [categories, setCategories] = useState<Category[]>([]);
   
-  // --- 1. Add Stock State ---
   const [stock, setStock] = useState('0'); 
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const navigate = useNavigate();
+  const { showToast } = useToast(); // <-- 2. Get Hook
 
   // Fetch categories for the dropdown
   useEffect(() => {
@@ -32,7 +34,7 @@ const ProductCreate = () => {
         const { data } = await apiClient.get('/categories');
         setCategories(data);
         if (data.length > 0) {
-          setCategoryId(data[0].id); // Default to first category
+          setCategoryId(data[0].id);
         }
       } catch (err) {
         console.error(err);
@@ -54,10 +56,14 @@ const ProductCreate = () => {
         price,
         description,
         categoryId,
-        stock, // --- 2. Send stock to backend ---
+        stock,
       });
       setLoading(false);
-      navigate('/admin/inventory'); // Go back to list on success
+      
+      // 3. Show Success Toast
+      showToast('Product created successfully!', 'success');
+      
+      navigate('/admin/inventory');
     } catch (err) {
       console.error(err);
       let message = 'Failed to create product';
@@ -65,44 +71,54 @@ const ProductCreate = () => {
         message = err.response.data.message;
       }
       setError(message);
+      
+      // 4. Show Error Toast
+      showToast(message, 'error');
+      
       setLoading(false);
     }
   };
 
   return (
-    <div>
-      <h2>Create New Product</h2>
-      <form onSubmit={handleSubmit} style={{ maxWidth: 600 }}>
-        {/* Form fields... */}
-        <div style={{ marginBottom: 15 }}>
-          <label>Product Name</label><br />
-          <input type="text" value={name} onChange={(e) => setName(e.target.value)} required style={{ width: '100%' }} />
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <h2>Create New Product</h2>
+        <Link to="/admin/inventory" className={styles.backLink}>
+          &larr; Back to Inventory
+        </Link>
+      </div>
+      
+      {error && <div className={styles.error}>{error}</div>}
+
+      <form onSubmit={handleSubmit} className={styles.form}>
+        <div className={styles.formGroup}>
+          <label>Product Name</label>
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)} required />
         </div>
-        <div style={{ marginBottom: 15 }}>
-          <label>SKU</label><br />
-          <input type="text" value={sku} onChange={(e) => setSku(e.target.value)} required style={{ width: '100%' }} />
+        
+        <div className={styles.formGroup}>
+          <label>SKU</label>
+          <input type="text" value={sku} onChange={(e) => setSku(e.target.value)} required />
         </div>
-        <div style={{ marginBottom: 15 }}>
-          <label>Price (in Rupees)</label><br />
-          <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} required style={{ width: '100%' }} />
+        
+        <div className={styles.formGroup}>
+          <label>Price (in Rupees)</label>
+          <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} required />
         </div>
 
-        {/* --- 3. Add Stock Input --- */}
-        <div style={{ marginBottom: 15 }}>
-          <label>Initial Stock</label><br />
+        <div className={styles.formGroup}>
+          <label>Initial Stock</label>
           <input 
             type="number" 
             value={stock} 
             onChange={(e) => setStock(e.target.value)} 
             required 
-            style={{ width: '100%' }} 
           />
         </div>
-        {/* --- End Stock Input --- */}
 
-        <div style={{ marginBottom: 15 }}>
-          <label>Category</label><br />
-          <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} style={{ width: '100%' }}>
+        <div className={styles.formGroup}>
+          <label>Category</label>
+          <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
             {categories.length === 0 ? (
               <option>Loading categories...</option>
             ) : (
@@ -112,14 +128,13 @@ const ProductCreate = () => {
             )}
           </select>
         </div>
-        <div style={{ marginBottom: 15 }}>
-          <label>Description</label><br />
-          <textarea value={description} onChange={(e) => setDescription(e.target.value)} style={{ width: '100%' }} rows={4} />
+        
+        <div className={styles.formGroup}>
+          <label>Description</label>
+          <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4} />
         </div>
 
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-
-        <button type="submit" disabled={loading} style={{ padding: '10px 15px' }}>
+        <button type="submit" disabled={loading} className={styles.submitButton}>
           {loading ? 'Creating...' : 'Create Product'}
         </button>
       </form>

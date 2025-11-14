@@ -1,16 +1,20 @@
-// client/src/pages/auth/Register.tsx
-import { useState, type FormEvent} from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, type FormEvent } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import apiClient from '../../services/apiClient';
-import { AxiosError } from 'axios'; // <-- 1. IMPORT THIS
+import { useToast } from '../../contexts/ToastContext'; // <-- 1. Import useToast
+import { AxiosError } from 'axios';
+import styles from './Auth.module.scss';
 
 const Register = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  // We can remove local 'error' state since we use toasts now, 
+  // but keeping it for inline display is also fine if you want both.
+  const [error, setError] = useState(''); 
   
+  const { showToast } = useToast(); // <-- 2. Get the hook
   const navigate = useNavigate();
 
   const handleSubmit = async (e: FormEvent) => {
@@ -19,7 +23,9 @@ const Register = () => {
     setLoading(true);
 
     if (!name || !email || !password) {
-      setError('Please fill in all fields');
+      const msg = 'Please fill in all fields';
+      setError(msg);
+      showToast(msg, 'error'); // <-- 3. Show validation toast
       setLoading(false);
       return;
     }
@@ -33,64 +39,78 @@ const Register = () => {
 
       console.log('Registration successful:', data);
       setLoading(false);
-      navigate('/auth/login'); 
-
-    // vvv 2. REPLACE THIS WHOLE BLOCK vvv
-    } catch (err) { 
+      
+      // 4. Show Success Toast
+      showToast('Registration successful! Please login.', 'success');
+      
+      navigate('/auth/login');
+    } catch (err) {
       console.error(err);
-      let message = 'Registration failed'; // Default message
-
-      if (err instanceof AxiosError) {
-        if (err.response?.data?.message) {
-          message = err.response.data.message;
-        }
+      let message = 'Registration failed';
+      if (err instanceof AxiosError && err.response?.data?.message) {
+        message = err.response.data.message;
       } else if (err instanceof Error) {
         message = err.message;
       }
-
+      
       setError(message);
+      showToast(message, 'error'); // <-- 5. Show Error Toast
       setLoading(false);
     }
-    // ^^^ 2. REPLACE THIS WHOLE BLOCK ^^^
   };
 
-  // ... rest of the component ...
   return (
-    <div style={{ maxWidth: 400, margin: '50px auto' }}>
-      <h1>Register for QuickCart</h1>
+    <div className={styles.authContainer}>
+      <h1 className={styles.title}>Create Account</h1>
+      
       <form onSubmit={handleSubmit}>
-        {/* ... form inputs ... */}
-        <div style={{ marginBottom: 10 }}>
-          <label>Name</label><br />
+        {error && <div className={styles.error}>{error}</div>}
+
+        <div className={styles.formGroup}>
+          <label>Full Name</label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            style={{ width: '100%' }}
+            placeholder="John Doe"
+            required
           />
         </div>
-        <div style={{ marginBottom: 10 }}>
-          <label>Email</label><br />
+
+        <div className={styles.formGroup}>
+          <label>Email Address</label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            style={{ width: '100%' }}
+            placeholder="name@example.com"
+            required
           />
         </div>
-        <div style={{ marginBottom: 10 }}>
-          <label>Password</label><br />
+
+        <div className={styles.formGroup}>
+          <label>Password</label>
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            style={{ width: '100%' }}
+            placeholder="Create a strong password"
+            required
           />
         </div>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        <button type="submit" disabled={loading} style={{ width: '100%' }}>
-          {loading ? 'Registering...' : 'Register'}
+
+        <button 
+          type="submit" 
+          className={styles.submitButton} 
+          disabled={loading}
+        >
+          {loading ? 'Creating Account...' : 'Register'}
         </button>
+
+        <p className={styles.footerText}>
+          Already have an account? 
+          <Link to="/auth/login">Login here</Link>
+        </p>
       </form>
     </div>
   );

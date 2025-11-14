@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import apiClient from '../../services/apiClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import styles from './DriverDashboard.module.scss'; // <-- Import SCSS
 
 interface Order {
   id: string;
@@ -48,7 +49,7 @@ const DriverDashboard = () => {
       await apiClient.post(`/delivery/${orderId}/accept`);
       fetchData();
     } catch (error) {
-      console.error(error); // <-- FIX: Log the error so it is "used"
+      console.error(error);
       alert('Failed to accept order');
     }
   };
@@ -58,30 +59,40 @@ const DriverDashboard = () => {
       await apiClient.put(`/delivery/${deliveryId}/complete`);
       fetchData();
     } catch (error) {
-      console.error(error); // <-- FIX: Log the error here too
+      console.error(error);
       alert('Failed to complete delivery');
     }
   };
 
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
+    <div className={styles.dashboardContainer}>
+      <div className={styles.header}>
         <h1>🚗 Driver Portal</h1>
-        <button onClick={() => { logout(); navigate('/auth/login'); }}>Logout</button>
+        <button 
+          className={styles.logoutButton} 
+          onClick={() => { logout(); navigate('/auth/login'); }}
+        >
+          Logout
+        </button>
       </div>
 
-      <div style={{ marginBottom: 40 }}>
+      {/* My Active Deliveries Section */}
+      <div className={styles.section}>
         <h2>My Active Deliveries</h2>
-        {myDeliveries.length === 0 ? <p>No active deliveries.</p> : (
-          <div style={{ display: 'grid', gap: '15px' }}>
+        {myDeliveries.length === 0 ? (
+          <p className={styles.emptyMessage}>No active deliveries. Pick one up below!</p>
+        ) : (
+          <div className={styles.cardGrid}>
             {myDeliveries.map(del => (
-              <div key={del.id} style={{ border: '2px solid green', padding: 15, borderRadius: 8, background: '#f0fff4' }}>
-                <h3>Order #{del.order.id.slice(-6)}</h3>
-                <p>Customer: {del.order.user.name}</p>
-                <p>Status: <strong>{del.status}</strong></p>
+              <div key={del.id} className={styles.activeCard}>
+                <div className={styles.cardHeader}>
+                  <h3>Order #{del.order.id.slice(-6)}</h3>
+                  <span className={styles.statusBadge}>{del.status}</span>
+                </div>
+                <p><strong>Customer:</strong> {del.order.user.name}</p>
                 <button 
+                  className={styles.completeButton}
                   onClick={() => handleComplete(del.id)}
-                  style={{ background: 'green', color: 'white', padding: '10px', border: 'none', borderRadius: 4, cursor: 'pointer' }}
                 >
                   Mark Delivered ✅
                 </button>
@@ -91,20 +102,24 @@ const DriverDashboard = () => {
         )}
       </div>
 
-      <div>
+      {/* Available Orders Section */}
+      <div className={styles.section}>
         <h2>Available for Pickup</h2>
-        {availableOrders.length === 0 ? <p>No orders waiting for pickup.</p> : (
-          <div style={{ display: 'grid', gap: '15px' }}>
+        {availableOrders.length === 0 ? (
+          <p className={styles.emptyMessage}>No orders currently waiting for pickup.</p>
+        ) : (
+          <div className={styles.cardGrid}>
             {availableOrders.map(order => (
-              <div key={order.id} style={{ border: '1px solid #ccc', padding: 15, borderRadius: 8 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <div key={order.id} className={styles.card}>
+                <div className={styles.cardHeader}>
                   <h3>Order #{order.id.slice(-6)}</h3>
-                  <span style={{ background: '#eee', padding: '2px 8px', borderRadius: 4 }}>{order.status}</span>
+                  <span className={styles.statusBadge}>{order.status}</span>
                 </div>
-                <p>Customer: {order.user.name}</p>
+                <p><strong>Customer:</strong> {order.user.name}</p>
+                <p>Items: {order._count?.items || 0}</p>
                 <button 
+                  className={styles.acceptButton}
                   onClick={() => handleAccept(order.id)}
-                  style={{ background: 'blue', color: 'white', padding: '8px 16px', border: 'none', borderRadius: 4, cursor: 'pointer' }}
                 >
                   Accept Order
                 </button>

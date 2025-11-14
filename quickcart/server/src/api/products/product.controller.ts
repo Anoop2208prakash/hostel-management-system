@@ -39,7 +39,6 @@ export const getProductById = asyncHandler(async (req: Request, res: Response) =
     where: { id },
     include: {
       category: true,
-      // Only get stock for our specific dark store
       stockItems: {
         where: { darkStoreId: DARK_STORE_ID } 
       },
@@ -47,9 +46,7 @@ export const getProductById = asyncHandler(async (req: Request, res: Response) =
   });
 
   if (product) {
-    // Get the specific stock quantity, or 0 if none exists
     const currentStock = product.stockItems[0]?.quantity || 0;
-    // Return product data mixed with the stock count
     res.json({ ...product, stock: currentStock });
   } else {
     res.status(404);
@@ -63,7 +60,6 @@ export const getProductById = asyncHandler(async (req: Request, res: Response) =
  * @access  Private/Admin
  */
 export const createProduct = asyncHandler(async (req: Request, res: Response) => {
-  // We now extract 'stock' from the body
   const { name, sku, price, description, categoryId, stock } = req.body;
 
   if (!name || !sku || !price || !categoryId) {
@@ -77,9 +73,7 @@ export const createProduct = asyncHandler(async (req: Request, res: Response) =>
     throw new Error('Product with this SKU already exists');
   }
 
-  // Use transaction to create Product AND StockItem simultaneously
   const product = await prisma.$transaction(async (tx) => {
-    // 1. Create the Product
     const newProduct = await tx.product.create({
       data: {
         name,
@@ -90,12 +84,11 @@ export const createProduct = asyncHandler(async (req: Request, res: Response) =>
       },
     });
 
-    // 2. Create the initial Stock Item
     await tx.stockItem.create({
       data: {
         productId: newProduct.id,
         darkStoreId: DARK_STORE_ID,
-        quantity: parseInt(stock) || 0, // Default to 0 if no stock provided
+        quantity: parseInt(stock) || 0,
       },
     });
 
@@ -112,7 +105,6 @@ export const createProduct = asyncHandler(async (req: Request, res: Response) =>
  */
 export const updateProduct = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  // We now extract 'stock' from the body
   const { name, sku, price, description, categoryId, stock } = req.body;
 
   const product = await prisma.product.findUnique({ where: { id } });
@@ -129,9 +121,7 @@ export const updateProduct = asyncHandler(async (req: Request, res: Response) =>
     }
   }
 
-  // Use transaction to update Product AND StockItem
   const updatedProduct = await prisma.$transaction(async (tx) => {
-    // 1. Update Product details
     const p = await tx.product.update({
       where: { id },
       data: {
@@ -143,7 +133,6 @@ export const updateProduct = asyncHandler(async (req: Request, res: Response) =>
       },
     });
 
-    // 2. Update (or Create) Stock Item if stock value is sent
     if (stock !== undefined) {
       await tx.stockItem.upsert({
         where: {
@@ -168,7 +157,7 @@ export const updateProduct = asyncHandler(async (req: Request, res: Response) =>
 });
 
 /**
- * @desc    Delete a product
+ * @desc    Delete a product (Safe Delete)
  * @route   DELETE /api/products/:id
  * @access  Private/Admin
  */
@@ -182,6 +171,33 @@ export const deleteProduct = asyncHandler(async (req: Request, res: Response) =>
     throw new Error('Product not found');
   }
 
-  await prisma.product.delete({ where: { id } });
+  // Check if the product is part of any completed ORDERS.
+  const orderItemCount = await prisma.orderItem.count({
+    where: { productId: id }
+  });
+
+  if (orderItemCount > 0) {
+    res.status(400);
+    throw new Error('Cannot delete product. It is part of existing orders.');
+  }
+
+  // Use a transaction to delete dependencies first
+  await prisma.$transaction(async (tx) => {
+    // 1. Delete Inventory (StockItems)
+    await tx.stockItem.deleteMany({
+      where: { productId: id },
+    });
+
+    // 2. Delete from User Carts
+    await tx.cartItem.deleteMany({
+      where: { productId: id },
+    });
+
+    // 3. Delete the Product itself
+    await tx.product.delete({ 
+      where: { id } 
+    });
+  });
+
   res.json({ message: 'Product removed' });
 });

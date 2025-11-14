@@ -2,39 +2,39 @@ import { useState, useEffect, type FormEvent } from 'react';
 import apiClient from '../../services/apiClient';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { AxiosError } from 'axios';
+import { useToast } from '../../contexts/ToastContext'; // <-- 1. Import Toast
+import styles from './ProductEdit.module.scss';
 
 interface Category {
   id: string;
   name: string;
 }
 
-// Product data received from API
 interface ProductData {
   name: string;
   sku: string;
   price: number;
   description: string;
   categoryId: string;
-  stock: number; // <-- 1. Add stock field
+  stock: number;
 }
 
 const ProductEdit = () => {
   const { id: productId } = useParams();
   const navigate = useNavigate();
+  const { showToast } = useToast(); // <-- 2. Get Hook
 
-  // Form state
   const [name, setName] = useState('');
   const [sku, setSku] = useState('');
   const [price, setPrice] = useState('');
   const [description, setDescription] = useState('');
   const [categoryId, setCategoryId] = useState('');
-  const [stock, setStock] = useState(''); // <-- 2. Add stock state
+  const [stock, setStock] = useState('');
   const [categories, setCategories] = useState<Category[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Fetch categories and product data
   useEffect(() => {
     const fetchData = async () => {
       if (!productId) {
@@ -55,7 +55,7 @@ const ProductEdit = () => {
         setPrice(String(product.price));
         setDescription(product.description || '');
         setCategoryId(product.categoryId);
-        setStock(String(product.stock)); // <-- 3. Set stock from API
+        setStock(String(product.stock));
 
         setCategories(categoriesRes.data);
 
@@ -66,13 +66,14 @@ const ProductEdit = () => {
           message = err.response.data.message;
         }
         setError(message);
+        showToast(message, 'error'); // Optional: Toast on load error
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [productId]);
+  }, [productId, showToast]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -86,9 +87,13 @@ const ProductEdit = () => {
         price,
         description,
         categoryId,
-        stock, // <-- 4. Send updated stock
+        stock,
       });
       setLoading(false);
+      
+      // 3. Show Success Toast
+      showToast('Product updated successfully!', 'success');
+      
       navigate('/admin/inventory');
     } catch (err) {
       console.error(err);
@@ -97,6 +102,10 @@ const ProductEdit = () => {
         message = err.response.data.message;
       }
       setError(message);
+      
+      // 4. Show Error Toast
+      showToast(message, 'error');
+      
       setLoading(false);
     }
   };
@@ -104,55 +113,52 @@ const ProductEdit = () => {
   if (loading) return <div>Loading product data...</div>;
 
   return (
-    <div>
-      <Link to="/admin/inventory" style={{ marginBottom: 15, display: 'inline-block' }}>
-        &larr; Back to Inventory
-      </Link>
-      <h2>Edit Product</h2>
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <h2>Edit Product</h2>
+        <Link to="/admin/inventory" className={styles.backLink}>
+          &larr; Back to Inventory
+        </Link>
+      </div>
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {error && <div className={styles.error}>{error}</div>}
 
-      <form onSubmit={handleSubmit} style={{ maxWidth: 600 }}>
-        <div style={{ marginBottom: 15 }}>
-          <label>Product Name</label><br />
-          <input type="text" value={name} onChange={(e) => setName(e.target.value)} required style={{ width: '100%' }} />
+      <form onSubmit={handleSubmit} className={styles.form}>
+        <div className={styles.formGroup}>
+          <label>Product Name</label>
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)} required />
         </div>
-        <div style={{ marginBottom: 15 }}>
-          <label>SKU</label><br />
-          <input type="text" value={sku} onChange={(e) => setSku(e.target.value)} required style={{ width: '100%' }} />
+        
+        <div className={styles.formGroup}>
+          <label>SKU</label>
+          <input type="text" value={sku} onChange={(e) => setSku(e.target.value)} required />
         </div>
-        <div style={{ marginBottom: 15 }}>
-          <label>Price (in Rupees)</label><br />
-          <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} required style={{ width: '100%' }} />
+        
+        <div className={styles.formGroup}>
+          <label>Price (in Rupees)</label>
+          <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} required />
         </div>
 
-        {/* --- 5. Add Stock Input --- */}
-        <div style={{ marginBottom: 15 }}>
-          <label>Stock Quantity</label><br />
-          <input 
-            type="number" 
-            value={stock} 
-            onChange={(e) => setStock(e.target.value)} 
-            required 
-            style={{ width: '100%' }} 
-          />
+        <div className={styles.formGroup}>
+          <label>Stock Quantity</label>
+          <input type="number" value={stock} onChange={(e) => setStock(e.target.value)} required />
         </div>
-        {/* --- End Stock Input --- */}
 
-        <div style={{ marginBottom: 15 }}>
-          <label>Category</label><br />
-          <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} style={{ width: '100%' }}>
+        <div className={styles.formGroup}>
+          <label>Category</label>
+          <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
             {categories.map(cat => (
               <option key={cat.id} value={cat.id}>{cat.name}</option>
             ))}
           </select>
         </div>
-        <div style={{ marginBottom: 15 }}>
-          <label>Description</label><br />
-          <textarea value={description} onChange={(e) => setDescription(e.target.value)} style={{ width: '100%' }} rows={4} />
+        
+        <div className={styles.formGroup}>
+          <label>Description</label>
+          <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4} />
         </div>
 
-        <button type="submit" disabled={loading} style={{ padding: '10px 15px' }}>
+        <button type="submit" disabled={loading} className={styles.submitButton}>
           {loading ? 'Updating...' : 'Update Product'}
         </button>
       </form>

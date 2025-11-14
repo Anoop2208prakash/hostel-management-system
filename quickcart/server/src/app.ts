@@ -4,8 +4,9 @@ import cors from 'cors';
 import authRoutes from './api/auth/auth.routes';
 import productRoutes from './api/products/product.routes';
 import categoryRoutes from './api/categories/category.routes';
-import orderRoutes from './api/orders/order.routes'; // <-- 1. IMPORT THIS
+import orderRoutes from './api/orders/order.routes';
 import deliveryRoutes from './api/delivery/delivery.routes';
+import userRoutes from './api/users/user.routes'; // <-- 1. IMPORT THIS
 
 const app = express();
 
@@ -22,8 +23,9 @@ app.get('/api', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
-app.use('/api/orders', orderRoutes); // <-- 2. ADD THIS LINE
+app.use('/api/orders', orderRoutes);
 app.use('/api/delivery', deliveryRoutes);
+app.use('/api/users', userRoutes); // <-- 2. ADD THIS LINE
 
 // --- (We will add an error handler middleware later) ---
 

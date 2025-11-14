@@ -1,10 +1,26 @@
-import { Outlet, Link } from 'react-router-dom';
+import { Outlet, Link, useNavigate } from 'react-router-dom';
+import styles from './AdminLayout.module.scss';
+import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 
 const AdminLayout = () => {
+  const { logout } = useAuth();
+  const { showToast } = useToast();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    showToast('Logged out successfully', 'success');
+    navigate('/auth/login');
+  };
+
   return (
-    <div style={{ display: 'flex' }}>
-      <aside style={{ width: '220px', background: '#f4f4f4', minHeight: '100vh', padding: '20px' }}>
-        <h3>Admin Menu</h3>
+    <div className={styles.container}>
+      <aside className={styles.sidebar}>
+        <Link to="/admin" className={styles.brand}>
+          QuickCart Admin
+        </Link>
+        
         <nav>
           <ul>
             <li>
@@ -18,9 +34,23 @@ const AdminLayout = () => {
             </li>
           </ul>
         </nav>
+
+        {/* --- ADDED LOGOUT BUTTON --- */}
+        {/* It goes after <nav> so flex-grow pushes it to the bottom */}
+        <button 
+          className={styles.logoutButton} 
+          onClick={handleLogout}
+        >
+          Logout
+        </button>
+        {/* --- END ADDED BUTTON --- */}
+
+        <div className={styles.footer}>
+          &copy; 2025 QuickCart
+        </div>
       </aside>
-      <main style={{ flex: 1, padding: '20px' }}>
-        {/* Outlet renders the active child route (e.g., Dashboard page) */}
+
+      <main className={styles.content}>
         <Outlet />
       </main>
     </div>
