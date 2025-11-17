@@ -18,6 +18,7 @@ import ProfilePage from '../pages/customer/ProfilePage';
 import UpdatePassword from '../pages/customer/UpdatePassword';
 import SearchPage from '../pages/customer/SearchPage';
 import CategoryPage from '../pages/customer/CategoryPage';
+import CheckoutPage from '../pages/customer/CheckoutPage'; // <-- 1. IMPORT THIS
 
 // Auth Pages
 import Login from '../pages/auth/Login';
@@ -41,13 +42,13 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <Home /> },
       { path: 'cart', element: <CartPage /> },
+      { path: 'checkout', element: <CheckoutPage /> }, // <-- 2. ADD THIS ROUTE
       { path: 'order-success/:id', element: <OrderSuccess /> },
       { path: 'my-orders', element: <MyOrders /> },
       { path: 'profile', element: <ProfilePage /> },
       { path: 'profile/update-password', element: <UpdatePassword /> },
       { path: 'search', element: <SearchPage /> },
-      // --- vvv THIS IS THE CHANGE vvv ---
-      { path: 'category/:name', element: <CategoryPage /> }, 
+      { path: 'category/:name', element: <CategoryPage /> }, // Corrected to :name
     ],
   },
   {

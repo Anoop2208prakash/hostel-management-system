@@ -1,14 +1,17 @@
 /* client/src/components/common/ProductCard.module.scss */
+
 .card {
   width: 220px; 
   flex-shrink: 0; 
   border: 1px solid #eee;
   border-radius: 12px;
   padding: 16px;
-  text-align: left; /* <-- 1. CHANGED: Text is left-aligned */
+  text-align: left; /* Left-aligned text */
   background-color: #fff;
   box-shadow: 0 4px 6px rgba(0,0,0,0.05);
   transition: box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column; /* Ensures button stays at bottom */
   
   &:hover {
     box-shadow: 0 10px 20px rgba(0,0,0,0.1);
@@ -30,34 +33,72 @@
   }
 
   .name {
-    font-size: 0.95rem; /* <-- 2. CHANGED: Smaller font */
+    font-size: 0.95rem;
     font-weight: 600;
     margin: 0 0 8px 0;
-    color: #333; /* <-- 3. CHANGED: Darker text */
+    color: #333;
   }
 
   .price {
-    font-size: 1.1rem; /* <-- 4. CHANGED: Smaller font */
+    font-size: 1.1rem;
     font-weight: bold;
-    color: #333; /* <-- 5. CHANGED: Darker text */
+    color: #333;
     margin-bottom: 15px;
   }
 
-  /* --- 6. UPDATED BUTTON STYLE --- */
+  /* --- 1. THE ADD BUTTON (Bright Green) --- */
   .addButton {
     width: 100%;
     padding: 10px;
     font-size: 1rem;
-    font-weight: 700; /* Bolder */
+    font-weight: 700;
     cursor: pointer;
     border: none;
-    border-radius: 8px; /* Softer radius */
+    border-radius: 8px;
     background-color: #22c55e; /* Bright Green */
     color: white;
     transition: background-color 0.2s;
+    margin-top: auto; /* Push to bottom */
 
     &:hover {
       background-color: #16a34a; /* Darker Bright Green */
     }
+  }
+
+  /* --- 2. THE QUANTITY CONTROLS (Matching Bright Green) --- */
+  .quantityControl {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #22c55e; /* Matches the Add button */
+    border-radius: 8px;
+    padding: 6px;
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: auto;
+  }
+
+  .qtyBtn {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 4px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+  }
+
+  .qtyValue {
+    font-weight: 700;
+    color: white;
+    font-size: 1rem;
   }
 }

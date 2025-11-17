@@ -12,12 +12,17 @@ export const getOrders = asyncHandler(async (req: Request, res: Response) => {
   const orders = await prisma.order.findMany({
     include: {
       user: {
-        select: { name: true, email: true },
+        select: {
+          name: true,
+          email: true,
+        },
       },
       items: {
         include: {
           product: {
-            select: { name: true },
+            select: {
+              name: true,
+            },
           },
         },
       },
@@ -31,12 +36,12 @@ export const getOrders = asyncHandler(async (req: Request, res: Response) => {
 });
 
 /**
- * @desc    Create a new order (with Stock Management)
+ * @desc    Create a new order (with Stock Management & Address)
  * @route   POST /api/orders
  * @access  Private
  */
 export const createOrder = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const { cartItems, totalPrice } = req.body;
+  const { cartItems, totalPrice, addressId } = req.body; // Get addressId
   const userId = req.user?.id;
 
   if (!userId) {
@@ -48,12 +53,18 @@ export const createOrder = asyncHandler(async (req: AuthRequest, res: Response) 
     res.status(400);
     throw new Error('No items in cart');
   }
+  
+  if (!addressId) {
+    res.status(400);
+    throw new Error('No delivery address provided');
+  }
 
-  const darkStoreId = 'clxvw2k9w000008l41111aaaa'; // Hardcoded Dark Store ID
+  // Hardcoded Dark Store ID (Matches seed.ts)
+  const darkStoreId = 'clxvw2k9w000008l41111aaaa';
 
   try {
     const newOrder = await prisma.$transaction(async (tx) => {
-      // 1. CHECK STOCK
+      // 1. CHECK STOCK for all items first
       for (const item of cartItems) {
         const stockItem = await tx.stockItem.findUnique({
           where: {
@@ -69,13 +80,14 @@ export const createOrder = asyncHandler(async (req: AuthRequest, res: Response) 
         }
       }
 
-      // 2. CREATE Order
+      // 2. CREATE the Order
       const order = await tx.order.create({
         data: {
           userId: userId,
           totalPrice: totalPrice,
           status: 'PENDING',
           darkStoreId: darkStoreId,
+          addressId: addressId,
         },
       });
 
@@ -210,7 +222,7 @@ export const getMyOrders = asyncHandler(async (req: AuthRequest, res: Response) 
 });
 
 /**
- * @desc    Get order statistics for charts
+ * @desc    Get order statistics for charts (REVENUE)
  * @route   GET /api/orders/stats
  * @access  Private/Admin
  */
@@ -223,33 +235,37 @@ export const getOrderStats = asyncHandler(async (req: AuthRequest, res: Response
   switch (period) {
     case 'daily':
       query = `
-        ${baseQuery} AND \`createdAt\` >= CURDATE() - INTERVAL 7 DAY
-        GROUP BY DATE(\`createdAt\`)
-        ORDER BY DATE(\`createdAt\`) ASC;
+        SELECT SUM(\`totalPrice\`) as total, DATE_FORMAT(\`createdAt\`, '%Y-%m-%d') as date 
+        FROM \`order\` 
+        WHERE \`status\` = 'DELIVERED' AND \`createdAt\` >= CURDATE() - INTERVAL 7 DAY
+        GROUP BY date
+        ORDER BY date ASC;
       `;
       break;
     case 'weekly':
       query = `
         SELECT SUM(\`totalPrice\`) as total, DATE_FORMAT(DATE_SUB(\`createdAt\`, INTERVAL WEEKDAY(\`createdAt\`) DAY), '%Y-%m-%d') as date
         FROM \`order\` WHERE \`status\` = 'DELIVERED' AND \`createdAt\` >= CURDATE() - INTERVAL 12 WEEK
-        GROUP BY YEARWEEK(\`createdAt\`)
-        ORDER BY YEARWEEK(\`createdAt\`) ASC;
+        GROUP BY date
+        ORDER BY date ASC;
       `;
       break;
     case 'yearly':
       query = `
         SELECT SUM(\`totalPrice\`) as total, DATE_FORMAT(\`createdAt\`, '%Y-01-01') as date
         FROM \`order\` WHERE \`status\` = 'DELIVERED' AND \`createdAt\` >= CURDATE() - INTERVAL 5 YEAR
-        GROUP BY YEAR(\`createdAt\`)
-        ORDER BY YEAR(\`createdAt\`) ASC;
+        GROUP BY date
+        ORDER BY date ASC;
       `;
       break;
     case 'monthly':
     default:
       query = `
-        ${baseQuery} AND \`createdAt\` >= CURDATE() - INTERVAL 12 MONTH
-        GROUP BY DATE_FORMAT(\`createdAt\`, '%Y-%m-01')
-        ORDER BY DATE_FORMAT(\`createdAt\`, '%Y-%m-01') ASC;
+        SELECT SUM(\`totalPrice\`) as total, DATE_FORMAT(\`createdAt\`, '%Y-%m-01') as date
+        FROM \`order\` 
+        WHERE \`status\` = 'DELIVERED' AND \`createdAt\` >= CURDATE() - INTERVAL 12 MONTH
+        GROUP BY date
+        ORDER BY date ASC;
       `;
       break;
   }
@@ -266,7 +282,7 @@ export const getOrderStats = asyncHandler(async (req: AuthRequest, res: Response
 });
 
 /**
- * @desc    Get order COUNT statistics for charts
+ * @desc    Get order COUNT statistics for charts (ORDERS)
  * @route   GET /api/orders/stats/count
  * @access  Private/Admin
  */
@@ -280,33 +296,36 @@ export const getOrderCountStats = asyncHandler(async (req: AuthRequest, res: Res
   switch (period) {
     case 'daily':
       query = `
-        ${baseQuery} AND \`createdAt\` >= CURDATE() - INTERVAL 7 DAY
-        GROUP BY DATE(\`createdAt\`)
-        ORDER BY DATE(\`createdAt\`) ASC;
+        SELECT COUNT(id) as total, DATE_FORMAT(\`createdAt\`, '%Y-%m-%d') as date 
+        FROM \`order\` 
+        WHERE 1=1 AND \`createdAt\` >= CURDATE() - INTERVAL 7 DAY
+        GROUP BY date
+        ORDER BY date ASC;
       `;
       break;
     case 'weekly':
       query = `
         SELECT COUNT(id) as total, DATE_FORMAT(DATE_SUB(\`createdAt\`, INTERVAL WEEKDAY(\`createdAt\`) DAY), '%Y-%m-%d') as date
-        FROM \`order\` WHERE \`createdAt\` >= CURDATE() - INTERVAL 12 WEEK
-        GROUP BY YEARWEEK(\`createdAt\`)
-        ORDER BY YEARWEEK(\`createdAt\`) ASC;
+        FROM \`order\` WHERE 1=1 AND \`createdAt\` >= CURDATE() - INTERVAL 12 WEEK
+        GROUP BY date
+        ORDER BY date ASC;
       `;
       break;
     case 'yearly':
       query = `
         SELECT COUNT(id) as total, DATE_FORMAT(\`createdAt\`, '%Y-01-01') as date
-        FROM \`order\` WHERE \`createdAt\` >= CURDATE() - INTERVAL 5 YEAR
-        GROUP BY YEAR(\`createdAt\`)
-        ORDER BY YEAR(\`createdAt\`) ASC;
+        FROM \`order\` WHERE 1=1 AND \`createdAt\` >= CURDATE() - INTERVAL 5 YEAR
+        GROUP BY date
+        ORDER BY date ASC;
       `;
       break;
     case 'monthly':
     default:
       query = `
-        ${baseQuery} AND \`createdAt\` >= CURDATE() - INTERVAL 12 MONTH
-        GROUP BY DATE_FORMAT(\`createdAt\`, '%Y-%m-01')
-        ORDER BY DATE_FORMAT(\`createdAt\`, '%Y-%m-01') ASC;
+        SELECT COUNT(id) as total, DATE_FORMAT(\`createdAt\`, '%Y-%m-01') as date
+        FROM \`order\` WHERE 1=1 AND \`createdAt\` >= CURDATE() - INTERVAL 12 MONTH
+        GROUP BY date
+        ORDER BY date ASC;
       `;
       break;
   }

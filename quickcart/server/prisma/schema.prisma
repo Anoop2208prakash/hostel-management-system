@@ -47,6 +47,9 @@ model Address {
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // --- ADDED RELATION ---
+  orders Order[] 
 }
 
 // ------------------------------------
@@ -126,6 +129,12 @@ model Order {
   darkStore     DarkStore   @relation(fields: [darkStoreId], references: [id])
   status        OrderStatus @default(PENDING)
   totalPrice    Float
+  
+  // --- ADDED ADDRESS RELATION ---
+  addressId     String?
+  address       Address?    @relation(fields: [addressId], references: [id], onDelete: SetNull)
+  // -----------------------------
+
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   

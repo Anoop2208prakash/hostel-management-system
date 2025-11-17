@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE `order` ADD COLUMN `addressId` VARCHAR(191) NULL;
+
+-- AddForeignKey
+ALTER TABLE `Order` ADD CONSTRAINT `Order_addressId_fkey` FOREIGN KEY (`addressId`) REFERENCES `Address`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;

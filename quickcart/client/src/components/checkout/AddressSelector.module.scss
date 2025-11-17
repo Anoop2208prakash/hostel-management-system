@@ -1,0 +1,46 @@
+.container {
+  margin-top: 20px;
+  padding: 20px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #eee;
+}
+
+.list {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.card {
+  padding: 15px;
+  border: 2px solid #eee;
+  border-radius: 8px;
+  cursor: pointer;
+  
+  &.selected {
+    border-color: #31694E; /* Brand Green */
+    background-color: #e8f5e9;
+  }
+}
+
+.addButton, .saveButton {
+  background: #31694E;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  
+  input {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+  }
+}
