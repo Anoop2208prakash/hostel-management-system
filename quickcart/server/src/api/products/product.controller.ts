@@ -15,9 +15,10 @@ export const getProducts = asyncHandler(async (req: Request, res: Response) => {
 
   const whereClause: any = {};
   if (search && typeof search === 'string') {
+    // --- FIX: Removed 'mode: insensitive' ---
+    // MySQL default collation is usually case-insensitive anyway.
     whereClause.name = {
       contains: search,
-      mode: 'insensitive',
     };
   }
 
@@ -50,6 +51,7 @@ export const getProductById = asyncHandler(async (req: Request, res: Response) =
     where: { id },
     include: {
       category: true,
+      // Only get stock for our specific dark store
       stockItems: {
         where: { darkStoreId: DARK_STORE_ID } 
       },
@@ -57,7 +59,9 @@ export const getProductById = asyncHandler(async (req: Request, res: Response) =
   });
 
   if (product) {
+    // Get the specific stock quantity, or 0 if none exists
     const currentStock = product.stockItems[0]?.quantity || 0;
+    // Return product data mixed with the stock count
     res.json({ ...product, stock: currentStock });
   } else {
     res.status(404);
@@ -84,6 +88,7 @@ export const createProduct = asyncHandler(async (req: Request, res: Response) =>
     throw new Error('Product with this SKU already exists');
   }
 
+  // Use transaction to create Product AND StockItem
   const product = await prisma.$transaction(async (tx) => {
     const newProduct = await tx.product.create({
       data: {
@@ -92,10 +97,11 @@ export const createProduct = asyncHandler(async (req: Request, res: Response) =>
         price: parseFloat(price),
         description,
         categoryId,
-        imageUrl: imageUrl || null,
+        imageUrl: imageUrl || null, // Save null if no image
       },
     });
 
+    // Create initial stock entry
     await tx.stockItem.create({
       data: {
         productId: newProduct.id,
@@ -133,7 +139,9 @@ export const updateProduct = asyncHandler(async (req: Request, res: Response) =>
     }
   }
 
+  // Use transaction to update Product AND StockItem
   const updatedProduct = await prisma.$transaction(async (tx) => {
+    // 1. Update Product details
     const p = await tx.product.update({
       where: { id },
       data: {
@@ -142,10 +150,12 @@ export const updateProduct = asyncHandler(async (req: Request, res: Response) =>
         price: price ? parseFloat(price) : product.price,
         description: description || product.description,
         categoryId: categoryId || product.categoryId,
+        // If imageUrl is sent (even as ''), update it. Otherwise, keep the old one.
         imageUrl: imageUrl !== undefined ? (imageUrl || null) : product.imageUrl,
       },
     });
 
+    // 2. Update (or Create) Stock Item if stock value is sent
     if (stock !== undefined) {
       await tx.stockItem.upsert({
         where: {
@@ -184,6 +194,7 @@ export const deleteProduct = asyncHandler(async (req: Request, res: Response) =>
     throw new Error('Product not found');
   }
 
+  // Check if the product is part of any completed ORDERS.
   const orderItemCount = await prisma.orderItem.count({
     where: { productId: id }
   });
@@ -193,13 +204,19 @@ export const deleteProduct = asyncHandler(async (req: Request, res: Response) =>
     throw new Error('Cannot delete product. It is part of existing orders.');
   }
 
+  // Use a transaction to delete dependencies first
   await prisma.$transaction(async (tx) => {
+    // 1. Delete Inventory (StockItems)
     await tx.stockItem.deleteMany({
       where: { productId: id },
     });
+
+    // 2. Delete from User Carts
     await tx.cartItem.deleteMany({
       where: { productId: id },
     });
+
+    // 3. Delete the Product itself
     await tx.product.delete({ 
       where: { id } 
     });
@@ -208,8 +225,7 @@ export const deleteProduct = asyncHandler(async (req: Request, res: Response) =>
   res.json({ message: 'Product removed' });
 });
 
-
-// --- vvv ADD THESE TWO NEW FUNCTIONS vvv ---
+// --- ADDED MISSING FUNCTIONS ---
 
 /**
  * @desc    Get product count by category for chart
@@ -232,7 +248,6 @@ export const getProductStats = asyncHandler(async (req: Request, res: Response) 
 
   res.json(formattedStats);
 });
-
 
 /**
  * @desc    Get all products with low stock (<= 20)

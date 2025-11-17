@@ -126,7 +126,7 @@ const MainLayout = () => {
           {user && (
             <>
               {user.role === 'ADMIN' && (
-                 <Link to="/admin" className={styles.navLink}>Admin</Link>
+                <Link to="/admin" className={styles.navLink}>Admin</Link>
               )}
               
               <div className={styles.profileContainer} ref={dropdownRef}>
@@ -142,7 +142,7 @@ const MainLayout = () => {
                     <Link to="/my-orders" className={styles.dropdownItem} onClick={() => setIsDropdownOpen(false)}>My Orders</Link>
                     <Link to="/profile" className={styles.dropdownItem} onClick={() => setIsDropdownOpen(false)}>My Profile</Link>
                     <Link to="/profile/update-password" className={styles.dropdownItem} onClick={() => setIsDropdownOpen(false)}>Update Password</Link>
-                    <button onClick={handleLogout} className={styles.dropdownItem}>Logout</button>
+                    <button onClick={handleLogout} className={styles.dropdownItemButton}>Logout</button>
                   </div>
                 )}
               </div>

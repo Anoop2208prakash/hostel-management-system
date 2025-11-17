@@ -2,7 +2,7 @@ import styles from './ProductCard.module.scss';
 import { useCart } from '../../contexts/CartContext';
 import { useToast } from '../../contexts/ToastContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCartPlus } from '@fortawesome/free-solid-svg-icons';
+import { faCartPlus, faMinus, faPlus } from '@fortawesome/free-solid-svg-icons'; // Added faMinus, faPlus
 
 interface Product {
   id: string;
@@ -16,8 +16,15 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ product }: ProductCardProps) => {
-  const { addToCart } = useCart();
+  // 1. Get all cart functions we need
+  const { addToCart, cartItems, updateQuantity, removeFromCart } = useCart();
   const { showToast } = useToast();
+
+  // 2. Check if product is already in cart
+  const cartItem = cartItems.find(item => item.id === product.id);
+  const quantity = cartItem ? cartItem.quantity : 0;
+
+  // --- Handlers ---
 
   const handleAddToCart = () => {
     addToCart({
@@ -29,26 +36,33 @@ const ProductCard = ({ product }: ProductCardProps) => {
     showToast(`${product.name} added to cart!`, 'success');
   };
 
-  // --- This logic fixes broken images ---
+  const handleIncrement = () => {
+    updateQuantity(product.id, quantity + 1);
+  };
+
+  const handleDecrement = () => {
+    if (quantity > 1) {
+      updateQuantity(product.id, quantity - 1);
+    } else {
+      removeFromCart(product.id);
+      showToast(`${product.name} removed from cart`, 'error');
+    }
+  };
+
+  // --- Image Fix Logic ---
   const getImageUrl = (url?: string | null) => {
     const placeholderImg = 'https://via.placeholder.com/300x300.png?text=No+Image';
 
-    // If url is null, undefined, or an empty string
-    if (!url) {
-      return placeholderImg;
-    }
+    if (!url) return placeholderImg;
     
-    // If url is external (from seed file), use it directly
-    if (url.startsWith('http') || url.startsWith('https://')) {
+    if (url.startsWith('http') || url.startsWith('https')) {
       return url;
     }
 
-    // Otherwise, it's a local upload, so add the server path
     return `http://localhost:5000${url}`;
   };
 
   const imageSrc = getImageUrl(product.imageUrl);
-  // --- End of image fix ---
 
   return (
     <div className={styles.card}>
@@ -57,13 +71,27 @@ const ProductCard = ({ product }: ProductCardProps) => {
       </div>
       <h3 className={styles.name}>{product.name}</h3>
       <p className={styles.price}>₹{product.price.toFixed(2)}</p>
-      <button
-        className={styles.addButton}
-        onClick={handleAddToCart}
-      >
-        <FontAwesomeIcon icon={faCartPlus} style={{ marginRight: '8px' }} />
-        Add to Cart
-      </button>
+      
+      {/* 3. Conditional Rendering: Show Quantity Controls or Add Button */}
+      {quantity > 0 ? (
+        <div className={styles.quantityControl}>
+          <button onClick={handleDecrement} className={styles.qtyBtn}>
+            <FontAwesomeIcon icon={faMinus} />
+          </button>
+          <span className={styles.qtyValue}>{quantity}</span>
+          <button onClick={handleIncrement} className={styles.qtyBtn}>
+            <FontAwesomeIcon icon={faPlus} />
+          </button>
+        </div>
+      ) : (
+        <button
+          className={styles.addButton}
+          onClick={handleAddToCart}
+        >
+          <FontAwesomeIcon icon={faCartPlus} style={{ marginRight: '8px' }} />
+          Add to Cart
+        </button>
+      )}
     </div>
   );
 };

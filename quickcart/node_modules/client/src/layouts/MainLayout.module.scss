@@ -1,5 +1,6 @@
 /* client/src/layouts/MainLayout.module.scss */
 
+/* The main navbar container */
 .navbar {
   display: flex;
   align-items: center;
@@ -10,6 +11,7 @@
   border-bottom: 4px solid #BBC863; /* Olive accent */
 }
 
+/* 1. Left Side: Logo + Delivery */
 .brandSection {
   display: flex;
   align-items: center;
@@ -34,18 +36,19 @@
     margin: 0;
     font-size: 1rem;
     font-weight: 700;
-    color: #ffffff;
+    color: #ffffff; /* White text */
   }
   
   span {
     font-size: 0.9rem;
-    color: #eee;
+    color: #eee; /* Light text */
     display: flex;
     align-items: center;
     gap: 4px;
   }
 }
 
+/* 2. Center: Search Bar */
 .searchContainer {
   flex-grow: 1;
   max-width: 600px;
@@ -55,12 +58,15 @@
     width: 100%;
     padding: 12px 20px 12px 45px;
     font-size: 1rem;
-    border: 1px solid #658C58;
-    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid #658C58; /* Medium Green border */
+    background-color: rgba(255, 255, 255, 0.1); /* Transparent white */
     color: white;
     border-radius: 8px;
 
-    &::placeholder { color: #eee; }
+    &::placeholder {
+      color: #eee;
+    }
+
     &:focus {
       outline: none;
       border-color: #F0E491;
@@ -79,6 +85,7 @@
   }
 }
 
+/* 3. Right Side: Links + Profile + Cart */
 .navLinks {
   display: flex;
   align-items: center;
@@ -94,7 +101,10 @@
   color: #ffffff;
   font-weight: 600;
   transition: background 0.2s;
-  &:hover { background: #658C58; }
+
+  &:hover {
+    background: #658C58;
+  }
 }
 
 .cartLink {
@@ -112,6 +122,7 @@
   }
 }
 
+/* 4. Profile Dropdown */
 .profileContainer {
   position: relative;
   display: inline-block;
@@ -132,46 +143,107 @@
   cursor: pointer;
   user-select: none;
   transition: all 0.2s ease;
-  &:hover { transform: scale(1.1); }
+  &:hover {
+    transform: scale(1.1);
+  }
 }
 
+/* --- vvv UPDATED DROPDOWN STYLES vvv --- */
 .dropdownMenu {
   position: absolute;
-  top: 55px;
+  top: 100%; /* Positions it right below the parent container */
+  margin-top: 10px; /* Adds space but keeps it connected via the ::before arrow */
   right: 0;
   background-color: white;
   border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15); /* Softer shadow */
   border: 1px solid #eee;
-  min-width: 200px;
-  z-index: 100;
+  min-width: 220px; /* Wider */
+  z-index: 1000;
   padding: 8px 0;
   animation: fadeIn 0.15s ease-out;
+
+  /* Invisible bridge to prevent menu closing */
+  &::after {
+    content: '';
+    position: absolute;
+    top: -10px; /* Covers the 10px gap */
+    left: 0;
+    right: 0;
+    height: 10px;
+    background: transparent;
+  }
+
+  /* Top arrow */
+  &::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    right: 14px;
+    width: 12px;
+    height: 12px;
+    background: white;
+    transform: rotate(45deg);
+    border-top: 1px solid #eee;
+    border-left: 1px solid #eee;
+  }
 }
 
-.dropdownItem {
+.dropdownItemButton{
   display: block;
-  width: 100%;
-  padding: 10px 20px;
+  padding: 12px 20px; /* More padding */
   background: none;
   border: none;
   font-size: 0.95rem;
   font-weight: 500;
-  color: #333;
+  color: #444; /* Darker text */
   text-align: left;
   text-decoration: none;
+  width: 100%;
   cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:last-child {
+    border-top: 1px solid #f5f5f5;
+    margin-top: 4px;
+    color: #b91c1c; /* Red text for logout */
+  }
+
   &:hover {
-    background-color: #f9f9f9;
-    color: #31694E;
+      background-color: #fee2e2; /* Light red background */
+      color: #991b1b;
+      padding-left: 25px; /* Keep indent */
+    }
+  }
+
+.dropdownItem {
+  display: block;
+  padding: 12px 20px; /* More padding */
+  background: none;
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #444; /* Darker text */
+  text-align: left;
+  text-decoration: none;
+  width: auto;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: #e8f5e9; /* Light Green background */
+    color: #31694E; /* Dark Green text */
+    padding-left: 25px; /* Indent on hover */
   }
 }
+/* --- ^^^ END UPDATED STYLES ^^^ --- */
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* 5. CATEGORY BAR */
 .categoryBar {
   background: #fff;
   border-bottom: 1px solid #eee;
@@ -182,13 +254,12 @@
   flex-wrap: nowrap;
   overflow-x: auto; /* Allow scrolling */
   
-  /* --- vvv THIS IS THE FIX vvv --- */
+  /* Hide Scrollbar */
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
   &::-webkit-scrollbar { 
     display: none; /* Chrome, Safari, Opera */
   }
-  /* --- ^^^ END FIX ^^^ --- */
 }
 
 .categoryItem {
@@ -200,13 +271,14 @@
   color: #555;
   font-weight: 600;
   font-size: 0.9rem;
-  transition: color 0.2s;
+  transition: all 0.3s ease;
   flex-shrink: 0;
   width: 80px;
   text-align: center;
   
   &:hover {
-    color: #22c55e;
+    color: #31694E; /* Dark Green text on hover */
+    transform: translateY(-3px); /* Subtle lift effect */
   }
 
   .iconWrapper {
@@ -217,13 +289,16 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid #eee;
-    transition: all 0.2s;
+    border: 2px solid transparent; /* Reserve space for border */
+    transition: all 0.3s ease;
     color: #31694E;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
   }
 
   &:hover .iconWrapper {
-    background-color: #e8f5e9;
-    border-color: #22c55e;
+    background-color: #e8f5e9; /* Light Green background */
+    border-color: #31694E;     /* Dark Green border ring */
+    color: #16a34a;            /* Brighter Green icon */
+    box-shadow: 0 4px 12px rgba(49, 105, 78, 0.2); /* Green glow */
   }
 }

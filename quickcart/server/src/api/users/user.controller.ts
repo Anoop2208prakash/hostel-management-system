@@ -3,9 +3,9 @@ import type { Response } from 'express';
 import prisma from '../../lib/prisma';
 import type { AuthRequest } from '../auth/auth.middleware';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken'; // <-- 1. Import JWT
+import jwt from 'jsonwebtoken';
 
-// 2. Add token generation helper
+// Token generation helper
 const generateToken = (id: string) => {
   const secret = process.env.JWT_SECRET;
   if (!secret) {
@@ -54,6 +54,7 @@ export const updateUserProfile = asyncHandler(async (req: AuthRequest, res: Resp
     throw new Error('User not found');
   }
 
+  // Check if email is taken by another user
   if (email && email !== user.email) {
     const emailExists = await prisma.user.findUnique({ where: { email } });
     if (emailExists) {
@@ -62,6 +63,7 @@ export const updateUserProfile = asyncHandler(async (req: AuthRequest, res: Resp
     }
   }
 
+  // Hash new password if provided
   let hashedPassword = user.password;
   if (password) {
     const salt = await bcrypt.genSalt(10);
@@ -78,7 +80,7 @@ export const updateUserProfile = asyncHandler(async (req: AuthRequest, res: Resp
     },
   });
 
-  // 3. Return full user object WITH a new token
+  // Return updated user info with a new token
   res.json({
     _id: updatedUser.id,
     name: updatedUser.name,
@@ -87,4 +89,54 @@ export const updateUserProfile = asyncHandler(async (req: AuthRequest, res: Resp
     role: updatedUser.role,
     token: generateToken(updatedUser.id),
   });
+});
+
+/**
+ * @desc    Get user addresses
+ * @route   GET /api/users/addresses
+ * @access  Private
+ */
+export const getAddresses = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const userId = req.user?.id;
+  if (!userId) {
+    res.status(401);
+    throw new Error('User not found');
+  }
+
+  const addresses = await prisma.address.findMany({
+    where: { userId },
+  });
+
+  res.json(addresses);
+});
+
+/**
+ * @desc    Add a new address
+ * @route   POST /api/users/addresses
+ * @access  Private
+ */
+export const addAddress = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const userId = req.user?.id;
+  const { street, city, zip } = req.body;
+
+  if (!userId) {
+    res.status(401);
+    throw new Error('User not found');
+  }
+
+  if (!street || !city || !zip) {
+    res.status(400);
+    throw new Error('Please provide street, city, and zip code');
+  }
+
+  const address = await prisma.address.create({
+    data: {
+      userId,
+      street,
+      city,
+      zip,
+    },
+  });
+
+  res.status(201).json(address);
 });
