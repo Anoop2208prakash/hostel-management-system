@@ -24,7 +24,7 @@
   border: 1px solid #eee;
 }
 
-/* --- NEW STYLES FOR REORDER FEATURE --- */
+/* --- ACTION STYLES --- */
 
 /* Aligns the buttons to the right in the grid cell */
 .actionsCell {
@@ -33,7 +33,7 @@
   gap: 10px;
 }
 
-/* The Reorder Button Style */
+/* The Reorder Button Style (Green) */
 .reorderButton {
   background-color: #31694E; /* Brand Green */
   color: white;
@@ -53,7 +53,25 @@
   }
 }
 
-/* Optional: Style for a 'View Details' button if you add one later */
+/* --- NEW: Cancel Button Style (Red) --- */
+.cancelButton {
+  background-color: #fff;
+  color: #b91c1c; /* Red text */
+  border: 1px solid #b91c1c;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background-color: #b91c1c;
+    color: white;
+  }
+}
+
+/* Optional: Style for a 'View Details' button */
 .viewButton {
   background-color: transparent;
   color: #555;

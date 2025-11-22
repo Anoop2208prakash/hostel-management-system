@@ -1,7 +1,6 @@
 import asyncHandler from 'express-async-handler';
 import type { Request, Response } from 'express';
 import prisma from '../../lib/prisma';
-import type { AuthRequest } from '../auth/auth.middleware';
 
 // Hardcoded Dark Store ID (Matches the one in your seed.ts)
 const DARK_STORE_ID = 'clxvw2k9w000008l41111aaaa';
@@ -16,7 +15,7 @@ export const getProducts = asyncHandler(async (req: Request, res: Response) => {
 
   const whereClause: any = {};
 
-  // 1. Search Filter (Name OR Description) - MySQL Compatible
+  // 1. Search Filter (Name OR Description)
   if (search && typeof search === 'string') {
     whereClause.OR = [
       { name: { contains: search } },
@@ -37,7 +36,11 @@ export const getProducts = asyncHandler(async (req: Request, res: Response) => {
   }
 
   // 4. Sorting Logic
-  let orderBy: any = { createdAt: 'desc' }; 
+  // --- THIS IS THE FIX ---
+  // Changed 'createdAt' to 'id' because 'createdAt' does not exist on Product
+  let orderBy: any = { id: 'desc' }; 
+  // -----------------------
+  
   if (sort === 'price-asc') orderBy = { price: 'asc' };
   if (sort === 'price-desc') orderBy = { price: 'desc' };
 
@@ -105,7 +108,6 @@ export const createProduct = asyncHandler(async (req: Request, res: Response) =>
     throw new Error('Product with this SKU already exists');
   }
 
-  // Use transaction to create Product AND StockItem
   const product = await prisma.$transaction(async (tx) => {
     const newProduct = await tx.product.create({
       data: {
@@ -114,11 +116,10 @@ export const createProduct = asyncHandler(async (req: Request, res: Response) =>
         price: parseFloat(price),
         description,
         categoryId,
-        imageUrl: imageUrl || null, 
+        imageUrl: imageUrl || null,
       },
     });
 
-    // Create initial stock entry
     await tx.stockItem.create({
       data: {
         productId: newProduct.id,
@@ -234,11 +235,6 @@ export const deleteProduct = asyncHandler(async (req: Request, res: Response) =>
 
 // --- DASHBOARD STATS FUNCTIONS ---
 
-/**
- * @desc    Get product count by category for chart
- * @route   GET /api/products/stats/category
- * @access  Private/Admin
- */
 export const getProductStats = asyncHandler(async (req: Request, res: Response) => {
   const stats = await prisma.category.findMany({
     include: {
@@ -256,11 +252,6 @@ export const getProductStats = asyncHandler(async (req: Request, res: Response) 
   res.json(formattedStats);
 });
 
-/**
- * @desc    Get all products with low stock (<= 20)
- * @route   GET /api/products/stats/lowstock
- * @access  Private/Admin
- */
 export const getLowStockProducts = asyncHandler(async (req: Request, res: Response) => {
   const lowStockItems = await prisma.stockItem.findMany({
     where: {
@@ -274,46 +265,38 @@ export const getLowStockProducts = asyncHandler(async (req: Request, res: Respon
       },
     },
     orderBy: {
-      quantity: 'asc', 
+      quantity: 'asc',
     },
   });
 
   res.json(lowStockItems);
 });
 
-// --- vvv ADDED NEW FUNCTION vvv ---
-
-/**
- * @desc    Get products the user has bought before
- * @route   GET /api/products/buy-again
- * @access  Private
- */
-export const getBuyAgainProducts = asyncHandler(async (req: AuthRequest, res: Response) => {
+// --- BUY IT AGAIN FUNCTION ---
+export const getBuyAgainProducts = asyncHandler(async (req: any, res: Response) => {
   const userId = req.user?.id;
 
   if (!userId) {
-    res.json([]); // Return empty if not logged in
+    res.json([]); 
     return;
   }
 
-  // Find distinct product IDs from user's completed orders
   const distinctItems = await prisma.orderItem.findMany({
     where: {
       order: {
         userId: userId,
-        status: { in: ['DELIVERED', 'OUT_FOR_DELIVERY', 'CONFIRMED'] } // Items they actually bought
+        status: { in: ['DELIVERED', 'OUT_FOR_DELIVERY', 'CONFIRMED'] }
       }
     },
     distinct: ['productId'],
     select: {
       productId: true
     },
-    take: 10 // Limit to 10 items
+    take: 10 
   });
 
   const productIds = distinctItems.map(item => item.productId);
 
-  // Fetch the full product details
   const products = await prisma.product.findMany({
     where: {
       id: { in: productIds }
@@ -324,7 +307,6 @@ export const getBuyAgainProducts = asyncHandler(async (req: AuthRequest, res: Re
     }
   });
 
-  // Calculate total stock
   const productsWithStock = products.map((p) => {
     const totalStock = p.stockItems.reduce((sum, item) => sum + item.quantity, 0);
     return { ...p, totalStock };

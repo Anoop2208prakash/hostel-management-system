@@ -7,7 +7,7 @@ import styles from './MainLayout.module.scss';
 import { useState, useEffect, useRef, type FormEvent } from 'react';
 import LocationModal from '../components/layout/LocationModal';
 import FilterModal from '../components/search/FilterModal'; 
-import ProductDetailModal from '../components/products/ProductDetailModal'; // <-- 1. RE-IMPORT THIS
+import ProductDetailModal from '../components/products/ProductDetailModal';
 
 // --- IMPORT FONT AWESOME ---
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -52,6 +52,8 @@ const MainLayout = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // --- Filter Modal State ---
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const handleLogout = () => {
@@ -85,8 +87,9 @@ const MainLayout = () => {
 
   const handleSearchSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim().length === 0) return;
-    // Fresh search: go to search page with query
+    if (searchQuery.trim().length === 0) {
+      return;
+    }
     navigate(`/search?q=${searchQuery}`);
     setSearchQuery('');
   };
@@ -121,6 +124,7 @@ const MainLayout = () => {
             />
           </form>
           
+          {/* Filter Button */}
           <button 
             className={styles.filterButton} 
             onClick={() => setIsFilterOpen(true)}
@@ -149,10 +153,17 @@ const MainLayout = () => {
 
                 {isDropdownOpen && (
                   <div className={styles.dropdownMenu}>
-                    <Link to="/my-orders" className={styles.dropdownItem} onClick={() => setIsDropdownOpen(false)}>My Orders</Link>
-                    <Link to="/profile" className={styles.dropdownItem} onClick={() => setIsDropdownOpen(false)}>My Profile</Link>
-                    <Link to="/profile/update-password" className={styles.dropdownItem} onClick={() => setIsDropdownOpen(false)}>Update Password</Link>
-                    <button onClick={handleLogout} className={styles.dropdownItembtn}>Logout</button>
+                    <div className={styles.menuContent}>
+                      <Link to="/my-orders" className={styles.dropdownItem} onClick={() => setIsDropdownOpen(false)}>My Orders</Link>
+                      
+                      {/* --- ADDED WALLET LINK --- */}
+                      <Link to="/wallet" className={styles.dropdownItem} onClick={() => setIsDropdownOpen(false)}>My Wallet</Link>
+                      {/* --- END ADD --- */}
+
+                      <Link to="/profile" className={styles.dropdownItem} onClick={() => setIsDropdownOpen(false)}>My Profile</Link>
+                      <Link to="/profile/update-password" className={styles.dropdownItem} onClick={() => setIsDropdownOpen(false)}>Update Password</Link>
+                      <button onClick={handleLogout} className={styles.dropdownItemBtn}>Logout</button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -188,8 +199,8 @@ const MainLayout = () => {
       <LocationModal isOpen={isModalOpen} onClose={closeModal} />
       <FilterModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} />
       
-      {/* --- 2. ADDED THIS BACK --- */}
-      <ProductDetailModal /> 
+      {/* Product Modal */}
+      <ProductDetailModal />
       
     </div>
   );

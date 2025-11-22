@@ -34,6 +34,7 @@ import AdminOrderDetails from '../pages/admin/OrderDetails';
 
 // Driver Page
 import DriverDashboard from '../pages/driver/DriverDashboard';
+import WalletPage from '../pages/customer/WalletPage';
 
 const router = createBrowserRouter([
   {
@@ -47,6 +48,7 @@ const router = createBrowserRouter([
       { path: 'my-orders', element: <MyOrders /> },
       { path: 'profile', element: <ProfilePage /> },
       { path: 'profile/update-password', element: <UpdatePassword /> },
+      { path: 'wallet', element: <WalletPage /> },
       { path: 'search', element: <SearchPage /> },
       { path: 'category/:name', element: <CategoryPage /> }, // Corrected to :name
     ],

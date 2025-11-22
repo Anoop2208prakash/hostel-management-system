@@ -6,7 +6,8 @@ import {
   updateOrderStatus,
   getMyOrders,
   getOrderStats,
-  getOrderCountStats, // <-- 1. Import this
+  getOrderCountStats,
+  cancelOrder,
 } from './order.controller';
 import { protect, admin } from '../auth/auth.middleware';
 
@@ -36,5 +37,6 @@ router
 router
   .route('/:id/status')
   .put(protect, admin, updateOrderStatus);
+router.route('/:id/cancel').put(protect, cancelOrder);
 
 export default router;

@@ -3,37 +3,23 @@ import apiClient from '../../services/apiClient';
 import { AxiosError } from 'axios';
 import { DataGrid, type ColumnDef } from '../../components/common/DataGrid';
 import { useAuth } from '../../contexts/AuthContext';
-import { useCart } from '../../contexts/CartContext'; // 1. Import Cart
-import { useToast } from '../../contexts/ToastContext'; // 2. Import Toast
+import { useCart } from '../../contexts/CartContext';
+import { useToast } from '../../contexts/ToastContext';
 import { useNavigate } from 'react-router-dom';
 import styles from './MyOrders.module.scss';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faRepeat } from '@fortawesome/free-solid-svg-icons';
+import { faRepeat, faBan } from '@fortawesome/free-solid-svg-icons';
+import CancelOrderModal from '../../components/orders/CancelOrderModal'; // 1. Import Modal
 
-// Define the structure of the order items from the API
+// Interfaces
 interface OrderItem {
-  product: {
-    id: string;
-    name: string;
-    price: number;
-    imageUrl?: string;
-  };
+  product: { id: string; name: string; price: number; imageUrl?: string; };
 }
-
 interface Order {
-  id: string;
-  totalPrice: number;
-  status: string;
-  createdAt: string;
-  items: OrderItem[]; // Need items to reorder
+  id: string; totalPrice: number; status: string; createdAt: string; items: OrderItem[];
 }
-
 interface OrderRow {
-  id: string;
-  date: string;
-  total: string;
-  status: string;
-  originalOrder: Order; // Keep reference to full object
+  id: string; date: string; total: string; status: string; originalOrder: Order;
 }
 
 const MyOrders = () => {
@@ -41,24 +27,82 @@ const MyOrders = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
+  // 2. State for Modal
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
+  const [cancelLoading, setCancelLoading] = useState(false);
+
   const { user } = useAuth();
-  const { addItems } = useCart(); // 3. Get addItems function
+  const { addItems } = useCart();
   const { showToast } = useToast();
   const navigate = useNavigate();
 
-  // 4. Reorder Handler Logic
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const { data } = await apiClient.get<Order[]>('/orders/myorders');
+      
+      const formattedData = data.map(order => ({
+        id: order.id,
+        date: new Date(order.createdAt).toLocaleDateString(),
+        total: `₹${order.totalPrice.toFixed(2)}`,
+        status: order.status,
+        originalOrder: order,
+      }));
+      
+      setOrders(formattedData);
+      setError('');
+    } catch (err) {
+      console.error(err);
+      let message = 'Failed to fetch orders';
+      if (err instanceof AxiosError && err.response?.data?.message) {
+        message = err.response.data.message;
+      }
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user) fetchOrders();
+    else setLoading(false);
+  }, [user]);
+
   const handleReorder = (order: Order) => {
-    // Map order items back to the Product format needed by the cart
     const productsToAdd = order.items.map(item => ({
       id: item.product.id,
       name: item.product.name,
       price: item.product.price,
       imageUrl: item.product.imageUrl
     }));
-
-    addItems(productsToAdd); // Bulk add to cart
+    addItems(productsToAdd);
     showToast('Items added to cart!', 'success');
-    navigate('/cart'); // Go to cart to checkout
+    navigate('/cart');
+  };
+
+  // 3. Open Modal Handler
+  const initiateCancel = (orderId: string) => {
+    setOrderToCancel(orderId);
+    setIsCancelModalOpen(true);
+  };
+
+  // 4. Confirm Cancel Logic (called by Modal)
+  const handleConfirmCancel = async () => {
+    if (!orderToCancel) return;
+
+    setCancelLoading(true);
+    try {
+      await apiClient.put(`/orders/${orderToCancel}/cancel`);
+      showToast('Order cancelled successfully', 'success');
+      setIsCancelModalOpen(false); // Close modal
+      fetchOrders(); // Refresh list
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to cancel order', 'error');
+    } finally {
+      setCancelLoading(false);
+    }
   };
 
   const columns: ColumnDef<OrderRow>[] = [
@@ -68,20 +112,30 @@ const MyOrders = () => {
     { 
       header: 'Status', 
       accessorKey: 'status',
-      cell: (row) => (
-        <span style={{ 
-          fontWeight: 'bold', 
-          color: row.status === 'DELIVERED' ? '#16a34a' : '#d97706' 
-        }}>
-          {row.status}
-        </span>
-      )
+      cell: (row) => {
+        let color = '#d97706'; // Pending (Orange)
+        if (row.status === 'DELIVERED') color = '#16a34a'; // Green
+        if (row.status === 'CANCELLED') color = '#dc2626'; // Red
+        return <span style={{ fontWeight: 'bold', color }}>{row.status}</span>;
+      }
     },
     {
       header: 'Actions',
       cell: (row) => (
         <div className={styles.actionsCell}>
-          {/* 5. Reorder Button */}
+          {/* Cancel Button */}
+          {(row.status === 'PENDING' || row.status === 'CONFIRMED') && (
+            <button 
+              className={styles.cancelButton}
+              onClick={() => initiateCancel(row.id)} // Open Modal instead of window.confirm
+              title="Cancel Order"
+            >
+              <FontAwesomeIcon icon={faBan} style={{ marginRight: '5px' }} />
+              Cancel
+            </button>
+          )}
+
+          {/* Reorder Button */}
           <button 
             className={styles.reorderButton}
             onClick={() => handleReorder(row.originalOrder)}
@@ -93,42 +147,6 @@ const MyOrders = () => {
       )
     }
   ];
-
-  useEffect(() => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
-
-    const fetchOrders = async () => {
-      try {
-        setLoading(true);
-        const { data } = await apiClient.get<Order[]>('/orders/myorders');
-        
-        const formattedData = data.map(order => ({
-          id: order.id,
-          date: new Date(order.createdAt).toLocaleDateString(),
-          total: `₹${order.totalPrice.toFixed(2)}`,
-          status: order.status,
-          originalOrder: order, // Store full object for reordering
-        }));
-        
-        setOrders(formattedData);
-        setError('');
-      } catch (err) {
-        console.error(err);
-        let message = 'Failed to fetch orders';
-        if (err instanceof AxiosError && err.response?.data?.message) {
-          message = err.response.data.message;
-        }
-        setError(message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchOrders();
-  }, [user]);
 
   if (loading) return <div>Loading your orders...</div>;
   if (error) return <div style={{ color: 'red' }}>Error: {error}</div>;
@@ -144,6 +162,14 @@ const MyOrders = () => {
           emptyMessage="You haven't placed any orders yet."
         />
       </div>
+
+      {/* 5. Render the Modal */}
+      <CancelOrderModal 
+        isOpen={isCancelModalOpen}
+        onClose={() => setIsCancelModalOpen(false)}
+        onConfirm={handleConfirmCancel}
+        loading={cancelLoading}
+      />
     </div>
   );
 };

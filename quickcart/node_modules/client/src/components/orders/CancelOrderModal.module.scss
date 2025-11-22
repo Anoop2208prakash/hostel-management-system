@@ -1,0 +1,59 @@
+.container {
+  text-align: center;
+  padding: 10px;
+}
+
+.title {
+  color: #b91c1c; /* Red for danger */
+  margin-top: 0;
+  margin-bottom: 15px;
+}
+
+.message {
+  color: #555;
+  font-size: 1rem;
+  margin-bottom: 30px;
+  line-height: 1.5;
+}
+
+.actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+/* Base Button Style */
+.button {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  font-size: 1rem;
+  transition: all 0.2s;
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+}
+
+.keepButton {
+  @extend .button;
+  background-color: #f3f4f6;
+  color: #333;
+  
+  &:hover {
+    background-color: #e5e7eb;
+  }
+}
+
+.cancelButton {
+  @extend .button;
+  background-color: #b91c1c;
+  color: white;
+  
+  &:hover {
+    background-color: #991b1b;
+  }
+}

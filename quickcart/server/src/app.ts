@@ -9,6 +9,7 @@ import deliveryRoutes from './api/delivery/delivery.routes';
 import userRoutes from './api/users/user.routes';
 import locationRoutes from './api/location/location.routes';
 import uploadRoutes from './api/upload/upload.routes';
+import walletRoutes from './api/wallet/wallet.routes';
 
 const app = express();
 
@@ -36,5 +37,6 @@ app.use('/api/delivery', deliveryRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/location', locationRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/wallet', walletRoutes);
 
 export default app;

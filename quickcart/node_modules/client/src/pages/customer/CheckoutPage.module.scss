@@ -1,3 +1,5 @@
+/* ... existing styles ... */
+
 .grid {
   display: grid;
   grid-template-columns: 2fr 1fr;
@@ -11,18 +13,72 @@
 }
 
 .leftColumn {
-  background: #fff;
-  padding: 30px;
-  border-radius: 12px;
-  border: 1px solid #eee;
+  /* No background here, wrapper div style */
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
+/* Address Selector container styling moved to component, or keep it generic */
+
+.paymentSection {
+  background: #fff;
+  padding: 25px;
+  border-radius: 12px;
+  border: 1px solid #eee;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+
+  h3 {
+    margin-top: 0;
+    color: #31694E;
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+  }
+}
+
+.paymentOption {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px;
+  border: 2px solid #eee;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  input {
+    width: 20px;
+    height: 20px;
+    accent-color: #31694E;
+  }
+
+  &.selected {
+    border-color: #31694E;
+    background-color: #fdfdf5;
+  }
+  
+  &:hover {
+    background-color: #f9f9f9;
+  }
+}
+
+.optionText {
+  display: flex;
+  flex-direction: column;
+  
+  span { font-weight: 600; color: #333; }
+  small { color: #666; }
+  .errorText { color: #b91c1c; font-size: 0.85rem; font-weight: 600; }
+}
+
+/* Summary Styles */
 .summary {
   padding: 25px;
   background: #F0E491; /* Cream background */
   border-radius: 12px;
   color: #31694E;
-  height: fit-content; /* Make it stick to the top */
+  height: fit-content;
   position: sticky;
   top: 20px;
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCart } from '../../contexts/CartContext';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -17,8 +17,19 @@ const CheckoutPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  
+  // --- NEW STATES ---
+  const [paymentMethod, setPaymentMethod] = useState('COD'); // Default COD
+  const [walletBalance, setWalletBalance] = useState(0);
 
   const total = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+
+  // Fetch wallet balance on mount
+  useEffect(() => {
+    apiClient.get('/wallet').then(res => {
+      setWalletBalance(res.data.walletBalance);
+    }).catch(() => {/* ignore error if wallet fails to load */});
+  }, []);
 
   const handleConfirmOrder = async () => {
     if (!user) {
@@ -38,6 +49,7 @@ const CheckoutPage = () => {
         cartItems: cartItems,
         totalPrice: total,
         addressId: selectedAddressId,
+        paymentMethod: paymentMethod, // <-- Send selected method
       });
       
       setLoading(false);
@@ -56,12 +68,61 @@ const CheckoutPage = () => {
 
   return (
     <div className={styles.grid}>
-      {/* Left Column: Address */}
+      {/* Left Column */}
       <div className={styles.leftColumn}>
         <AddressSelector 
           selectedAddressId={selectedAddressId}
           onSelect={setSelectedAddressId}
         />
+        
+        {/* --- PAYMENT METHOD SECTION --- */}
+        <div className={styles.paymentSection}>
+          <h3>Payment Method</h3>
+          
+          <label className={`${styles.paymentOption} ${paymentMethod === 'WALLET' ? styles.selected : ''}`}>
+            <input 
+              type="radio" 
+              name="payment" 
+              value="WALLET" 
+              checked={paymentMethod === 'WALLET'}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+              disabled={walletBalance < total} // Disable if not enough money
+            />
+            <div className={styles.optionText}>
+              <span>QuickCart Wallet</span>
+              <small>Balance: ₹{walletBalance.toFixed(2)}</small>
+              {walletBalance < total && <span className={styles.errorText}>(Insufficient Balance)</span>}
+            </div>
+          </label>
+
+          <label className={`${styles.paymentOption} ${paymentMethod === 'UPI' ? styles.selected : ''}`}>
+            <input 
+              type="radio" 
+              name="payment" 
+              value="UPI" 
+              checked={paymentMethod === 'UPI'}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+            />
+            <div className={styles.optionText}>
+              <span>UPI (GPay, PhonePe, Paytm)</span>
+            </div>
+          </label>
+
+          <label className={`${styles.paymentOption} ${paymentMethod === 'COD' ? styles.selected : ''}`}>
+            <input 
+              type="radio" 
+              name="payment" 
+              value="COD" 
+              checked={paymentMethod === 'COD'}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+            />
+            <div className={styles.optionText}>
+              <span>Cash on Delivery</span>
+            </div>
+          </label>
+        </div>
+        {/* --- END PAYMENT SECTION --- */}
+
       </div>
 
       {/* Right Column: Summary */}
@@ -88,7 +149,7 @@ const CheckoutPage = () => {
           onClick={handleConfirmOrder}
           disabled={loading || cartItems.length === 0}
         >
-          {loading ? 'Placing Order...' : 'Confirm & Pay'}
+          {loading ? 'Processing...' : `Pay with ${paymentMethod === 'COD' ? 'Cash' : paymentMethod}`}
         </button>
       </div>
     </div>
