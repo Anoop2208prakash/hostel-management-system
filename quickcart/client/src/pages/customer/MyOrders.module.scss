@@ -15,11 +15,58 @@
   }
 }
 
-/* We can add a subtle wrapper around the grid if needed */
+/* Wrapper around the grid */
 .gridWrapper {
   background: white;
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 4px 15px rgba(0,0,0,0.03);
   border: 1px solid #eee;
+}
+
+/* --- NEW STYLES FOR REORDER FEATURE --- */
+
+/* Aligns the buttons to the right in the grid cell */
+.actionsCell {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* The Reorder Button Style */
+.reorderButton {
+  background-color: #31694E; /* Brand Green */
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px; /* Space between icon and text */
+
+  &:hover {
+    background-color: #244f3a; /* Darker Green */
+  }
+}
+
+/* Optional: Style for a 'View Details' button if you add one later */
+.viewButton {
+  background-color: transparent;
+  color: #555;
+  border: 1px solid #ddd;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: #31694E;
+    color: #31694E;
+  }
 }

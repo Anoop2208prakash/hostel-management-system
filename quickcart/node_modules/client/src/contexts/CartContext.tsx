@@ -9,13 +9,17 @@ interface CartItem {
   quantity: number;
 }
 
+// Helper type for adding items (quantity is optional/handled internally)
+type Product = Omit<CartItem, 'quantity'>;
+
 // Define the shape of the Context
 interface CartContextType {
   cartItems: CartItem[];
-  addToCart: (product: Omit<CartItem, 'quantity'>) => void;
+  addToCart: (product: Product) => void;
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
+  addItems: (products: Product[]) => void; // <-- NEW: Bulk add function
   itemCount: number;
 }
 
@@ -42,7 +46,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('quickcart_cart', JSON.stringify(cartItems));
   }, [cartItems]);
 
-  const addToCart = (product: Omit<CartItem, 'quantity'>) => {
+  const addToCart = (product: Product) => {
     setCartItems((prevItems) => {
       const existingItem = prevItems.find((item) => item.id === product.id);
 
@@ -59,6 +63,32 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       }
     });
   };
+
+  // --- NEW: Bulk Add Function (For Reorder) ---
+  const addItems = (products: Product[]) => {
+    setCartItems((prevItems) => {
+      // Create a deep copy or map to avoid mutation issues
+      const newCart = [...prevItems];
+
+      products.forEach((product) => {
+        const existingItemIndex = newCart.findIndex((item) => item.id === product.id);
+        
+        if (existingItemIndex > -1) {
+          // Increment quantity if it already exists
+          newCart[existingItemIndex] = {
+            ...newCart[existingItemIndex],
+            quantity: newCart[existingItemIndex].quantity + 1
+          };
+        } else {
+          // Add new item with quantity 1
+          newCart.push({ ...product, quantity: 1 });
+        }
+      });
+
+      return newCart;
+    });
+  };
+  // --- END NEW FUNCTION ---
 
   const removeFromCart = (productId: string) => {
     setCartItems((prevItems) =>
@@ -93,6 +123,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         removeFromCart,
         updateQuantity,
         clearCart,
+        addItems, // <-- Export the new function
         itemCount,
       }}
     >
